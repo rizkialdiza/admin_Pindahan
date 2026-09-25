@@ -3,177 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Katalog Eksklusif</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Owner Dashboard - Elegant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #4f46e5; --bg-color: #f3f4f6; --text-main: #111827; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent;}
-        body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 30px; }
+        :root { --bg-body: #f7f7f8; --bg-card: #ffffff; --text-main: #111111; --text-muted: #666666; --border: #e5e5e5; --accent: #111111; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        .container { background: var(--bg-card); padding: 35px; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04); margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); }
+        h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; }
 
-        .header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #eee; }
-        .header h1 { font-size: 20px; color: #111; letter-spacing: -0.5px;}
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; background: #f0f0f0; padding: 5px; border-radius: 10px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; color: var(--text-muted); }
+        .tab-btn.active { background: #fff; color: var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fade 0.3s; }
+        @keyframes fade { from {opacity: 0;} to {opacity: 1;} }
 
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .input-group { margin-bottom: 20px; }
+        label { font-size: 13px; font-weight: 500; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, textarea { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; background: #fff; }
+        input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(17,17,17,0.05); }
         
-        .card { background: #fff; border-radius: 16px; overflow: hidden; cursor: pointer; transition: 0.3s; position: relative; border: 1px solid #f0f0f0; display: flex; flex-direction: column;}
-        .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .card-img-wrapper { position: relative; width: 100%; padding-top: 100%; }
-        .card-img-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        .card-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column;}
-        .card-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
-        .card-price { font-size: 16px; font-weight: 700; margin-top: auto;}
+        .btn-submit { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 500; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        
+        .stock-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; gap: 10px;}
+        .item-info { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .item-img { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; background: #eee; }
+        .item-title { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+        
+        .status-controls { display: flex; flex-direction: column; gap: 4px; }
+        .btn-status { padding: 6px 12px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: #fff; color: #666; transition: 0.2s;}
+        
+        .btn-status.active-Ready { background: #dcfce7; color: #166534; border-color: #166534; }
+        .btn-status.active-Presale { background: #fef08a; color: #854d0e; border-color: #854d0e; }
+        .btn-status.active-Kosong { background: #fee2e2; color: #991b1b; border-color: #991b1b; }
 
-        /* STYLING STATUS BARANG */
-        .card.out-of-stock { opacity: 0.6; filter: grayscale(80%); pointer-events: none; } 
-        
-        .badge { position: absolute; top: 10px; right: 10px; color: white; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; z-index: 2; }
-        .badge-habis { background: #dc2626; } 
-        .badge-presale { background: #d97706; } 
-        .badge-banyak-foto { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); color: white; padding: 4px 8px; border-radius: 6px; font-size: 10px; z-index: 2;}
-
-        .status-text { grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #666; font-size: 14px; }
-
-        /* Modal Popup */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0, 0.6); backdrop-filter: blur(2px); z-index: 1000; align-items: flex-end; justify-content: center; animation: fadeIn 0.3s; }
-        .modal-content { background: #fff; width: 100%; max-width: 600px; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; animation: slideUp 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
-        /* Area Slider / Gambar Banyak */
-        .modal-header-img { position: relative; width: 100%; aspect-ratio: 1/1; background: #f9f9f9; border-radius: 24px 24px 0 0; overflow: hidden; }
-        .image-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 100%; width: 100%; }
-        .image-slider::-webkit-scrollbar { display: none; }
-        .image-slider img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: center; }
-        
-        .swipe-hint { position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); color: white; padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; z-index: 10; pointer-events: none;}
-        .btn-close { position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.9); width: 36px; height: 36px; border-radius: 50%; border: none; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
-        
-        .modal-body { padding: 24px; padding-bottom: 100px; overflow-y: auto;}
-        .modal-price { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
-        .modal-title { font-size: 18px; font-weight: 500; margin-bottom: 20px; }
-        .modal-desc { font-size: 14px; color: #555; white-space: pre-line; line-height: 1.6; }
-        
-        .modal-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px 20px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: center; }
-        .btn-buy { width: 100%; max-width: 400px; background: #111; color: #fff; padding: 16px; border-radius: 12px; text-align: center; text-decoration: none; font-weight: 500; }
+        #toast { visibility: hidden; min-width: 250px; background: #111; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; bottom: 40px; transform: translateX(-50%); left: 50%; z-index: 1000;}
+        #toast.show { visibility: visible; }
     </style>
 </head>
 <body>
 
-    <header class="header">
-        <h1>Katalog Produk</h1>
-    </header>
+    <div class="container">
+        <h2>Katalog Manajemen</h2>
+        <div class="subtitle">Kelola etalase dan stok produk Anda.</div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('upload')">Tambah Produk</button>
+            <button class="tab-btn" onclick="switchTab('stock'); loadStock();">Kelola Stok</button>
+        </div>
 
-    <main class="grid-container" id="katalog-container">
-        <div class="status-text">Memuat produk... ⏳</div>
-    </main>
-
-    <!-- Modal Produk -->
-    <div class="modal-overlay" id="product-modal">
-        <div class="modal-content">
-            <div class="modal-header-img">
-                <button class="btn-close" onclick="closeModal()">&times;</button>
-                <!-- Kontainer Slider Gambar -->
-                <div class="image-slider" id="modal-slider">
-                    <!-- Gambar akan dimunculkan di sini -->
+        <div id="tab-upload" class="tab-content active">
+            <form id="formProduk">
+                <div class="input-group">
+                    <label>Nama Produk</label>
+                    <input type="text" id="name" placeholder="Contoh: Baju Koko Premium" required>
                 </div>
-                <div id="swipe-hint" class="swipe-hint">Geser foto ↔️</div>
-            </div>
-            <div class="modal-body">
-                <div class="modal-price" id="modal-price"></div>
-                <div class="modal-title" id="modal-title"></div>
-                <div style="font-size:12px; font-weight:600; color:#888; margin-bottom:8px;">DESKRIPSI</div>
-                <div class="modal-desc" id="modal-desc"></div>
-            </div>
-            <div class="modal-footer">
-                <a href="#" id="modal-buy-btn" class="btn-buy" target="_blank">Pesan via WhatsApp</a>
-            </div>
+                
+                <div class="input-group">
+                    <label>Harga (Otomatis)</label>
+                    <!-- Tipe diubah jadi text agar bisa menampilkan "Rp" dan titik -->
+                    <input type="text" id="price" placeholder="Ketik angka..." required>
+                </div>
+
+                <div class="input-group">
+                    <label>Foto Produk (Bisa Pilih Lebih dari 1)</label>
+                    <input type="file" id="imageFiles" accept="image/*" multiple required>
+                </div>
+                <div class="input-group">
+                    <label>Deskripsi</label>
+                    <textarea id="desc" rows="3" placeholder="Jelaskan spesifikasinya..." required></textarea>
+                </div>
+                <button type="submit" id="btn-submit" class="btn-submit">Simpan Produk</button>
+            </form>
+        </div>
+
+        <div id="tab-stock" class="tab-content">
+            <div id="stock-list"><p style="text-align:center; font-size: 14px; color: #666;">Memuat data stok...</p></div>
         </div>
     </div>
 
+    <div id="toast">Notifikasi</div>
+
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwiWOMfOnoa1pjnVm9UefBhlGSH0mppuip16ui1H01W1Hixd4XwJRP-vZ36fl4-iFc9vw/exec';
-        const NOMOR_WA = "6281360171337"; 
+        let isStockLoaded = false;
 
-        const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+        // ===== FITUR AUTO FORMAT RUPIAH =====
+        document.getElementById('price').addEventListener('input', function(e) {
+            // Bersihkan semua huruf/simbol kecuali angka
+            let value = this.value.replace(/[^0-9]/g, ''); 
+            if (value) {
+                // Tambahkan Rp dan titik pemisah ribuan
+                this.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+            } else {
+                this.value = '';
+            }
+        });
+        // =====================================
 
-        async function fetchProduk() {
-            const container = document.getElementById('katalog-container');
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById("toast");
+            toast.innerText = msg; 
+            toast.style.background = isError ? "#dc2626" : "#111";
+            toast.className = "show";
+            setTimeout(() => toast.className = "", 3000);
+        }
+
+        const compressImage = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    if (w > h && w > 800) { h *= 800 / w; w = 800; } 
+                    else if (h > 800) { w *= 800 / h; h = 800; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.6).split(',')[1] });
+                };
+            };
+        });
+
+        document.getElementById('formProduk').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            btn.innerText = 'Memproses...'; btn.disabled = true;
+
             try {
-                const res = await fetch(`${API_URL}?t=${new Date().getTime()}`);
+                // Ambil harga bersih (hanya angka) untuk dikirim ke Sheet
+                const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, '');
+
+                const fileInput = document.getElementById('imageFiles');
+                let imagesData = await Promise.all(Array.from(fileInput.files).map(f => compressImage(f)));
+                const payload = { 
+                    action: 'create', 
+                    name: document.getElementById('name').value, 
+                    price: rawPrice, // Kirim harga bersihnya
+                    desc: document.getElementById('desc').value, 
+                    images: imagesData 
+                };
+                
+                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+                showToast('Produk berhasil ditambahkan!');
+                document.getElementById('formProduk').reset();
+                isStockLoaded = false; 
+            } catch (error) { showToast('Gagal memproses jaringan.', true); } 
+            finally { btn.innerText = 'Simpan Produk'; btn.disabled = false; }
+        });
+
+        async function loadStock() {
+            if (isStockLoaded) return; 
+
+            const list = document.getElementById('stock-list');
+            list.innerHTML = '<p style="text-align:center; font-size: 14px; color: #666;">Sedang mengambil data secepat kilat ⚡...</p>';
+            try {
+                const res = await fetch(`${API_URL}?action=list_stock&t=${new Date().getTime()}`);
                 const data = await res.json();
-                container.innerHTML = ''; 
-                if (!data || data.length === 0) return container.innerHTML = '<div class="status-text">Katalog kosong.</div>';
+                list.innerHTML = '';
+                if(data.length === 0) return list.innerHTML = '<p style="text-align:center;">Belum ada produk.</p>';
 
-                data.reverse().forEach(produk => {
-                    const hrg = formatRupiah(produk.price);
-                    // Pisahkan semua gambar menggunakan pemisah |
-                    let images = produk.image ? produk.image.split('|').map(url => url.trim()) : [];
-                    let thumb = images[0] ? images[0] : ""; 
-                    let isMultiple = images.length > 1; // Cek apakah foto lebih dari 1
+                data.reverse().forEach(p => {
+                    let status = p.status || 'Ready'; 
                     
-                    const isHabis = produk.status === "Kosong";
-                    const isPresale = produk.status === "Presale";
-
-                    let badgeHtml = '';
-                    if (isHabis) { badgeHtml = '<div class="badge badge-habis">STOK HABIS</div>'; } 
-                    else if (isPresale) { badgeHtml = '<div class="badge badge-presale">PRESALE</div>'; }
-
-                    const card = document.createElement('div');
-                    card.className = `card ${isHabis ? 'out-of-stock' : ''}`;
-                    
-                    card.innerHTML = `
-                        ${badgeHtml}
-                        <div class="card-img-wrapper">
-                            <img src="${thumb}">
-                            ${isMultiple ? '<div class="badge-banyak-foto">Ada ' + images.length + ' Foto</div>' : ''}
-                        </div>
-                        <div class="card-content">
-                            <div class="card-title">${produk.name}</div>
-                            <div class="card-price">${hrg}</div>
+                    list.innerHTML += `
+                        <div class="stock-item">
+                            <div class="item-info">
+                                <img src="${p.image}" class="item-img" onerror="this.onerror=null; this.src='https://via.placeholder.com/50?text=Foto'">
+                                <div>
+                                    <div class="item-title">${p.name}</div>
+                                </div>
+                            </div>
+                            <div class="status-controls">
+                                <button class="btn-status ${status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${p.id}', 'Ready', this)">Ready</button>
+                                <button class="btn-status ${status === 'Presale' ? 'active-Presale' : ''}" onclick="updateStock('${p.id}', 'Presale', this)">Presale</button>
+                                <button class="btn-status ${status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${p.id}', 'Kosong', this)">Habis</button>
+                            </div>
                         </div>
                     `;
-
-                    if(!isHabis) {
-                        // Kirimkan array gambar lengkap (bukan cuma thumb) ke fungsi openModal
-                        card.addEventListener('click', () => openModal(produk, hrg, images, isPresale));
-                    }
-                    container.appendChild(card);
                 });
-            } catch (error) { container.innerHTML = '<div class="status-text" style="color:red;">Koneksi terputus.</div>'; }
+                isStockLoaded = true;
+            } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat. Periksa koneksi internet.</p>'; }
         }
 
-        const modal = document.getElementById('product-modal');
-        
-        function openModal(produk, hrg, images, isPresale) {
-            // Render semua foto ke dalam slider
-            let sliderHtml = '';
-            images.forEach(imgSrc => {
-                if(imgSrc) sliderHtml += `<img src="${imgSrc}" onerror="this.onerror=null; this.src='https://via.placeholder.com/400?text=Error'">`;
+        async function updateStock(id, newStatus, btnElement) {
+            const container = btnElement.parentElement;
+            const buttons = container.querySelectorAll('.btn-status');
+            
+            let oldStatus = 'Ready';
+            buttons.forEach(b => {
+                if(b.classList.contains('active-Ready')) oldStatus = 'Ready';
+                if(b.classList.contains('active-Presale')) oldStatus = 'Presale';
+                if(b.classList.contains('active-Kosong')) oldStatus = 'Kosong';
             });
-            document.getElementById('modal-slider').innerHTML = sliderHtml;
-            
-            // Tampilkan/Sembunyikan hint "Geser foto" jika foto cuma 1
-            document.getElementById('swipe-hint').style.display = images.length > 1 ? 'block' : 'none';
 
-            document.getElementById('modal-title').innerText = produk.name;
-            document.getElementById('modal-price').innerText = hrg;
-            document.getElementById('modal-desc').innerText = produk.desc;
-            
-            let textWA = '';
-            if(isPresale) {
-                textWA = `Halo, saya tertarik untuk ikut PRE-ORDER / PRESALE:\n\n*${produk.name}*\nHarga: ${hrg}\n\nBagaimana sistem PO-nya?`;
-            } else {
-                textWA = `Halo, saya mau pesan:\n\n*${produk.name}*\nHarga: ${hrg}`;
+            buttons.forEach(b => {
+                b.classList.remove('active-Ready', 'active-Presale', 'active-Kosong');
+                b.disabled = true;
+            });
+            btnElement.classList.add('active-' + newStatus);
+            btnElement.innerText = '...';
+
+            try {
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'update_status', id: id, status: newStatus }) 
+                });
+                const result = await res.json();
+                if (result.status !== 'success') throw new Error("Gagal di Server");
+                showToast(`✅ Status tersimpan: ${newStatus}`);
+            } catch (e) {
+                showToast(`❌ Gagal mengubah status! Dikembalikan ke ${oldStatus}`, true);
+                buttons.forEach(b => b.classList.remove('active-' + newStatus));
+                const oldBtn = Array.from(buttons).find(b => b.getAttribute('onclick').includes(oldStatus));
+                if(oldBtn) oldBtn.classList.add('active-' + oldStatus);
+            } finally {
+                buttons.forEach(b => b.disabled = false);
+                btnElement.innerText = newStatus === 'Kosong' ? 'Habis' : newStatus;
             }
-
-            document.getElementById('modal-buy-btn').href = `https://wa.me/${NOMOR_WA}?text=${encodeURIComponent(textWA)}`;
-            modal.style.display = 'flex';
         }
-
-        function closeModal() { modal.style.display = 'none'; }
-        modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
-
-        fetchProduk();
     </script>
 </body>
 </html>
