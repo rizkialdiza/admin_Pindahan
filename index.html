@@ -34,7 +34,6 @@
         .item-img { width: 55px; height: 55px; border-radius: 8px; object-fit: cover; background: #eee; }
         .item-title { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
         
-        /* TOMBOL GANTI FOTO */
         .btn-edit-foto { background: #f0f0f0; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #444; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;}
         .btn-edit-foto:hover { background: #e5e5e5; }
 
@@ -48,7 +47,6 @@
         #toast { visibility: hidden; min-width: 250px; background: #111; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; bottom: 40px; transform: translateX(-50%); left: 50%; z-index: 1000;}
         #toast.show { visibility: visible; }
 
-        /* MODAL GANTI FOTO */
         .modal-edit { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px;}
         .modal-edit-box { background: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; }
         .modal-edit-box h3 { margin-bottom: 10px; font-size: 18px; }
@@ -61,7 +59,6 @@
     </style>
 </head>
 <body>
-
     <div class="container">
         <h2>Katalog Manajemen</h2>
         <div class="subtitle">Kelola etalase dan stok produk Anda.</div>
@@ -84,6 +81,7 @@
                 <div class="input-group">
                     <label>Foto / Video Produk (Pilih > 1)</label>
                     <input type="file" id="imageFiles" accept="image/*, video/mp4, video/quicktime" multiple required>
+                    <small style="color:red; font-size:11px;">Maksimal video: 10MB (Video harus ringan)</small>
                 </div>
                 <div class="input-group">
                     <label>Deskripsi</label>
@@ -138,9 +136,11 @@
             toast.className = "show"; setTimeout(() => toast.className = "", 3000);
         }
 
+        // FUNGSI INI SEKARANG DIPAKAI KEDUANYA (TAMBAH & EDIT) DENGAN KUALITAS SAMA
         const processMedia = (file) => new Promise((resolve, reject) => {
             if (file.type.startsWith('video/')) {
-                if (file.size > 15 * 1024 * 1024) { reject(new Error(`Video maks 15MB.`)); return; }
+                // BATAS VIDEO 10MB
+                if (file.size > 10 * 1024 * 1024) { reject(new Error(`Video maks 10MB.`)); return; }
                 const reader = new FileReader(); reader.readAsDataURL(file);
                 reader.onload = () => resolve({ filename: file.name, mimeType: file.type, base64: reader.result.split(',')[1] });
                 reader.onerror = error => reject(error);
@@ -150,64 +150,41 @@
                     const img = new Image(); img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_SIZE = 1600; // RESOLUSI HD 1600px
+                        // RESOLUSI SANGAT HD (2000px) UNTUK SEMUA UPLOAD
+                        const MAX_SIZE = 2000; 
                         let w = img.width, h = img.height;
                         if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } 
                         else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
                         canvas.width = w; canvas.height = h;
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.85).split(',')[1] });
+                        // KUALITAS SANGAT TINGGI (90%)
+                        resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.90).split(',')[1] });
                     };
                 };
             }
         });
 
-        // ==========================================
-        // FUNGSI GANTI FOTO EKSKLUSIF
-        // ==========================================
         function openEditModal(id, name) {
-            currentEditId = id;
-            document.getElementById('edit-product-name').innerText = name;
-            document.getElementById('editImageFiles').value = '';
-            document.getElementById('modal-edit').style.display = 'flex';
+            currentEditId = id; document.getElementById('edit-product-name').innerText = name;
+            document.getElementById('editImageFiles').value = ''; document.getElementById('modal-edit').style.display = 'flex';
         }
-
-        function closeEditModal() {
-            document.getElementById('modal-edit').style.display = 'none';
-            currentEditId = null;
-        }
+        function closeEditModal() { document.getElementById('modal-edit').style.display = 'none'; currentEditId = null; }
 
         async function submitEditFoto() {
             const fileInput = document.getElementById('editImageFiles');
-            if(fileInput.files.length === 0) {
-                alert("Silakan pilih minimal 1 foto/video HD baru!");
-                return;
-            }
-
+            if(fileInput.files.length === 0) { alert("Silakan pilih file!"); return; }
             const btn = document.getElementById('btn-submit-edit');
             btn.innerText = 'Mengupload HD... ⏳'; btn.disabled = true;
 
             try {
                 let mediaPromises = await Promise.all(Array.from(fileInput.files).map(f => processMedia(f)));
-                const payload = { 
-                    action: 'update_image', 
-                    id: currentEditId,
-                    images: mediaPromises 
-                };
-                
-                const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-                const result = await res.json();
-                
-                if (result.status === 'success') {
-                    showToast('✅ Foto berhasil diperbarui ke HD!');
-                    closeEditModal();
-                    isStockLoaded = false;
-                    loadStock(); // Muat ulang daftar stok
-                } else { throw new Error(result.message); }
-            } catch (error) { showToast('Gagal update foto.', true); } 
+                const payload = { action: 'update_image', id: currentEditId, images: mediaPromises };
+                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+                showToast('✅ Foto berhasil diperbarui ke HD!');
+                closeEditModal(); isStockLoaded = false; loadStock(); 
+            } catch (error) { showToast(error.message, true); } 
             finally { btn.innerText = 'Update Foto'; btn.disabled = false; }
         }
-        // ==========================================
 
         document.getElementById('formProduk').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -218,25 +195,21 @@
                 const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, '');
                 const fileInput = document.getElementById('imageFiles');
                 let mediaPromises = await Promise.all(Array.from(fileInput.files).map(f => processMedia(f)));
-                
                 const payload = { action: 'create', name: document.getElementById('name').value, price: rawPrice, desc: document.getElementById('desc').value, images: mediaPromises };
                 
                 await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
                 showToast('Produk HD berhasil ditambahkan!');
-                document.getElementById('formProduk').reset();
-                isStockLoaded = false; 
+                document.getElementById('formProduk').reset(); isStockLoaded = false; 
             } catch (error) { showToast(error.message, true); } 
             finally { btn.innerText = 'Simpan Produk'; btn.disabled = false; }
         });
 
         async function loadStock() {
             if (isStockLoaded) return; 
-            const list = document.getElementById('stock-list');
-            list.innerHTML = '<p style="text-align:center; font-size: 14px; color: #666;">Mengambil data... ⚡</p>';
+            const list = document.getElementById('stock-list'); list.innerHTML = '<p style="text-align:center; font-size: 14px; color: #666;">Mengambil data... ⚡</p>';
             try {
                 const res = await fetch(`${API_URL}?action=list_stock&t=${new Date().getTime()}`);
-                const data = await res.json();
-                list.innerHTML = '';
+                const data = await res.json(); list.innerHTML = '';
                 if(data.length === 0) return list.innerHTML = '<p style="text-align:center;">Belum ada produk.</p>';
 
                 data.reverse().forEach(p => {
@@ -255,9 +228,7 @@
                                 ${imgHtml}
                                 <div>
                                     <div class="item-title">${p.name}</div>
-                                    <button class="btn-edit-foto" onclick="openEditModal('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
-                                        📷 Ganti Foto HD
-                                    </button>
+                                    <button class="btn-edit-foto" onclick="openEditModal('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📷 Ganti Foto HD</button>
                                 </div>
                             </div>
                             <div class="status-controls">
@@ -295,8 +266,7 @@
                 const oldBtn = Array.from(buttons).find(b => b.getAttribute('onclick').includes(oldStatus));
                 if(oldBtn) oldBtn.classList.add('active-' + oldStatus);
             } finally {
-                buttons.forEach(b => b.disabled = false);
-                btnElement.innerText = newStatus === 'Kosong' ? 'Habis' : newStatus;
+                buttons.forEach(b => b.disabled = false); btnElement.innerText = newStatus === 'Kosong' ? 'Habis' : newStatus;
             }
         }
     </script>
