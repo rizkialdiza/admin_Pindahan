@@ -24,16 +24,20 @@
 
         .input-group { margin-bottom: 20px; }
         label { font-size: 13px; font-weight: 500; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-        input, textarea { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; background: #fff; }
+        input, textarea { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
         input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(17,17,17,0.05); }
         
-        .btn-submit { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 500; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .btn-submit { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; }
         
         .stock-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; gap: 10px;}
         .item-info { display: flex; align-items: center; gap: 12px; flex: 1; }
-        .item-img { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; background: #eee; }
-        .item-title { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+        .item-img { width: 55px; height: 55px; border-radius: 8px; object-fit: cover; background: #eee; }
+        .item-title { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
         
+        /* TOMBOL GANTI FOTO */
+        .btn-edit-foto { background: #f0f0f0; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #444; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;}
+        .btn-edit-foto:hover { background: #e5e5e5; }
+
         .status-controls { display: flex; flex-direction: column; gap: 4px; }
         .btn-status { padding: 6px 12px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: #fff; color: #666; transition: 0.2s;}
         
@@ -43,6 +47,17 @@
 
         #toast { visibility: hidden; min-width: 250px; background: #111; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; bottom: 40px; transform: translateX(-50%); left: 50%; z-index: 1000;}
         #toast.show { visibility: visible; }
+
+        /* MODAL GANTI FOTO */
+        .modal-edit { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px;}
+        .modal-edit-box { background: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; }
+        .modal-edit-box h3 { margin-bottom: 10px; font-size: 18px; }
+        .modal-edit-box p { font-size: 13px; color: #666; margin-bottom: 15px; line-height: 1.4;}
+        .modal-edit-box input[type="file"] { margin-bottom: 20px; width: 100%; }
+        .modal-buttons { display: flex; gap: 10px; }
+        .modal-buttons button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;}
+        .btn-cancel { background: #f0f0f0; color: #333; }
+        .btn-update { background: #111; color: #fff; }
     </style>
 </head>
 <body>
@@ -60,22 +75,19 @@
             <form id="formProduk">
                 <div class="input-group">
                     <label>Nama Produk</label>
-                    <input type="text" id="name" placeholder="Contoh: Baju Koko Premium" required>
+                    <input type="text" id="name" required>
                 </div>
-                
                 <div class="input-group">
                     <label>Harga (Otomatis)</label>
-                    <!-- Tipe diubah jadi text agar bisa menampilkan "Rp" dan titik -->
-                    <input type="text" id="price" placeholder="Ketik angka..." required>
+                    <input type="text" id="price" required>
                 </div>
-
                 <div class="input-group">
-                    <label>Foto Produk (Bisa Pilih Lebih dari 1)</label>
-                    <input type="file" id="imageFiles" accept="image/*" multiple required>
+                    <label>Foto / Video Produk (Pilih > 1)</label>
+                    <input type="file" id="imageFiles" accept="image/*, video/mp4, video/quicktime" multiple required>
                 </div>
                 <div class="input-group">
                     <label>Deskripsi</label>
-                    <textarea id="desc" rows="3" placeholder="Jelaskan spesifikasinya..." required></textarea>
+                    <textarea id="desc" rows="3" required></textarea>
                 </div>
                 <button type="submit" id="btn-submit" class="btn-submit">Simpan Produk</button>
             </form>
@@ -86,24 +98,32 @@
         </div>
     </div>
 
+    <!-- MODAL GANTI FOTO -->
+    <div class="modal-edit" id="modal-edit">
+        <div class="modal-edit-box">
+            <h3>Update Foto Produk</h3>
+            <p>Pilih foto/video HD baru untuk: <b id="edit-product-name"></b>. <br><span style="color:#dc2626;">Foto lama akan otomatis dihapus.</span></p>
+            <input type="file" id="editImageFiles" accept="image/*, video/mp4, video/quicktime" multiple>
+            
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeEditModal()">Batal</button>
+                <button class="btn-update" id="btn-submit-edit" onclick="submitEditFoto()">Update Foto</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast">Notifikasi</div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwiWOMfOnoa1pjnVm9UefBhlGSH0mppuip16ui1H01W1Hixd4XwJRP-vZ36fl4-iFc9vw/exec';
         let isStockLoaded = false;
+        let currentEditId = null;
 
-        // ===== FITUR AUTO FORMAT RUPIAH =====
         document.getElementById('price').addEventListener('input', function(e) {
-            // Bersihkan semua huruf/simbol kecuali angka
             let value = this.value.replace(/[^0-9]/g, ''); 
-            if (value) {
-                // Tambahkan Rp dan titik pemisah ribuan
-                this.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
-            } else {
-                this.value = '';
-            }
+            if (value) { this.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(value); } 
+            else { this.value = ''; }
         });
-        // =====================================
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -114,60 +134,105 @@
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById("toast");
-            toast.innerText = msg; 
-            toast.style.background = isError ? "#dc2626" : "#111";
-            toast.className = "show";
-            setTimeout(() => toast.className = "", 3000);
+            toast.innerText = msg; toast.style.background = isError ? "#dc2626" : "#111";
+            toast.className = "show"; setTimeout(() => toast.className = "", 3000);
         }
 
-        const compressImage = (file) => new Promise((resolve, reject) => {
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = (e) => {
-                const img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    if (w > h && w > 800) { h *= 800 / w; w = 800; } 
-                    else if (h > 800) { w *= 800 / h; h = 800; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.6).split(',')[1] });
+        const processMedia = (file) => new Promise((resolve, reject) => {
+            if (file.type.startsWith('video/')) {
+                if (file.size > 15 * 1024 * 1024) { reject(new Error(`Video maks 15MB.`)); return; }
+                const reader = new FileReader(); reader.readAsDataURL(file);
+                reader.onload = () => resolve({ filename: file.name, mimeType: file.type, base64: reader.result.split(',')[1] });
+                reader.onerror = error => reject(error);
+            } else {
+                const reader = new FileReader(); reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image(); img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIZE = 1600; // RESOLUSI HD 1600px
+                        let w = img.width, h = img.height;
+                        if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } 
+                        else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.85).split(',')[1] });
+                    };
                 };
-            };
+            }
         });
+
+        // ==========================================
+        // FUNGSI GANTI FOTO EKSKLUSIF
+        // ==========================================
+        function openEditModal(id, name) {
+            currentEditId = id;
+            document.getElementById('edit-product-name').innerText = name;
+            document.getElementById('editImageFiles').value = '';
+            document.getElementById('modal-edit').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('modal-edit').style.display = 'none';
+            currentEditId = null;
+        }
+
+        async function submitEditFoto() {
+            const fileInput = document.getElementById('editImageFiles');
+            if(fileInput.files.length === 0) {
+                alert("Silakan pilih minimal 1 foto/video HD baru!");
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit-edit');
+            btn.innerText = 'Mengupload HD... ⏳'; btn.disabled = true;
+
+            try {
+                let mediaPromises = await Promise.all(Array.from(fileInput.files).map(f => processMedia(f)));
+                const payload = { 
+                    action: 'update_image', 
+                    id: currentEditId,
+                    images: mediaPromises 
+                };
+                
+                const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+                const result = await res.json();
+                
+                if (result.status === 'success') {
+                    showToast('✅ Foto berhasil diperbarui ke HD!');
+                    closeEditModal();
+                    isStockLoaded = false;
+                    loadStock(); // Muat ulang daftar stok
+                } else { throw new Error(result.message); }
+            } catch (error) { showToast('Gagal update foto.', true); } 
+            finally { btn.innerText = 'Update Foto'; btn.disabled = false; }
+        }
+        // ==========================================
 
         document.getElementById('formProduk').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-submit');
-            btn.innerText = 'Memproses...'; btn.disabled = true;
+            btn.innerText = 'Mengupload Kualitas HD... ⏳'; btn.disabled = true;
 
             try {
-                // Ambil harga bersih (hanya angka) untuk dikirim ke Sheet
                 const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, '');
-
                 const fileInput = document.getElementById('imageFiles');
-                let imagesData = await Promise.all(Array.from(fileInput.files).map(f => compressImage(f)));
-                const payload = { 
-                    action: 'create', 
-                    name: document.getElementById('name').value, 
-                    price: rawPrice, // Kirim harga bersihnya
-                    desc: document.getElementById('desc').value, 
-                    images: imagesData 
-                };
+                let mediaPromises = await Promise.all(Array.from(fileInput.files).map(f => processMedia(f)));
+                
+                const payload = { action: 'create', name: document.getElementById('name').value, price: rawPrice, desc: document.getElementById('desc').value, images: mediaPromises };
                 
                 await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-                showToast('Produk berhasil ditambahkan!');
+                showToast('Produk HD berhasil ditambahkan!');
                 document.getElementById('formProduk').reset();
                 isStockLoaded = false; 
-            } catch (error) { showToast('Gagal memproses jaringan.', true); } 
+            } catch (error) { showToast(error.message, true); } 
             finally { btn.innerText = 'Simpan Produk'; btn.disabled = false; }
         });
 
         async function loadStock() {
             if (isStockLoaded) return; 
-
             const list = document.getElementById('stock-list');
-            list.innerHTML = '<p style="text-align:center; font-size: 14px; color: #666;">Sedang mengambil data secepat kilat ⚡...</p>';
+            list.innerHTML = '<p style="text-align:center; font-size: 14px; color: #666;">Mengambil data... ⚡</p>';
             try {
                 const res = await fetch(`${API_URL}?action=list_stock&t=${new Date().getTime()}`);
                 const data = await res.json();
@@ -176,13 +241,23 @@
 
                 data.reverse().forEach(p => {
                     let status = p.status || 'Ready'; 
+                    let thumbRaw = p.image ? p.image.split('|')[0] : '';
+                    let thumbUrl = thumbRaw.replace('img:','').replace('vid:','');
+                    let isVideo = thumbRaw.startsWith('vid:');
+                    
+                    let imgHtml = isVideo 
+                        ? `<video src="${thumbUrl}" class="item-img" muted></video>` 
+                        : `<img src="${thumbUrl}" class="item-img" onerror="this.onerror=null; this.src='https://via.placeholder.com/50'">`;
                     
                     list.innerHTML += `
                         <div class="stock-item">
                             <div class="item-info">
-                                <img src="${p.image}" class="item-img" onerror="this.onerror=null; this.src='https://via.placeholder.com/50?text=Foto'">
+                                ${imgHtml}
                                 <div>
                                     <div class="item-title">${p.name}</div>
+                                    <button class="btn-edit-foto" onclick="openEditModal('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+                                        📷 Ganti Foto HD
+                                    </button>
                                 </div>
                             </div>
                             <div class="status-controls">
@@ -194,38 +269,28 @@
                     `;
                 });
                 isStockLoaded = true;
-            } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat. Periksa koneksi internet.</p>'; }
+            } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat. Periksa koneksi.</p>'; }
         }
 
         async function updateStock(id, newStatus, btnElement) {
             const container = btnElement.parentElement;
             const buttons = container.querySelectorAll('.btn-status');
-            
             let oldStatus = 'Ready';
             buttons.forEach(b => {
                 if(b.classList.contains('active-Ready')) oldStatus = 'Ready';
                 if(b.classList.contains('active-Presale')) oldStatus = 'Presale';
                 if(b.classList.contains('active-Kosong')) oldStatus = 'Kosong';
             });
-
-            buttons.forEach(b => {
-                b.classList.remove('active-Ready', 'active-Presale', 'active-Kosong');
-                b.disabled = true;
-            });
-            btnElement.classList.add('active-' + newStatus);
-            btnElement.innerText = '...';
+            buttons.forEach(b => { b.classList.remove('active-Ready', 'active-Presale', 'active-Kosong'); b.disabled = true; });
+            btnElement.classList.add('active-' + newStatus); btnElement.innerText = '...';
 
             try {
-                const res = await fetch(API_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'update_status', id: id, status: newStatus }) 
-                });
+                const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'update_status', id: id, status: newStatus }) });
                 const result = await res.json();
                 if (result.status !== 'success') throw new Error("Gagal di Server");
                 showToast(`✅ Status tersimpan: ${newStatus}`);
             } catch (e) {
-                showToast(`❌ Gagal mengubah status! Dikembalikan ke ${oldStatus}`, true);
+                showToast(`❌ Gagal mengubah status!`, true);
                 buttons.forEach(b => b.classList.remove('active-' + newStatus));
                 const oldBtn = Array.from(buttons).find(b => b.getAttribute('onclick').includes(oldStatus));
                 if(oldBtn) oldBtn.classList.add('active-' + oldStatus);
