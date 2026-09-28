@@ -33,7 +33,6 @@
         .item-info { display: flex; align-items: center; gap: 12px; flex: 1; }
         .item-img-container { position: relative; width: 55px; height: 55px; border-radius: 8px; background: #eee; overflow: hidden; }
         .item-img { width: 100%; height: 100%; object-fit: cover; }
-        .vid-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; }
         
         .item-title { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
         .btn-edit-foto { background: #f0f0f0; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #444; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;}
@@ -78,9 +77,8 @@
                     <input type="text" id="price" required>
                 </div>
                 <div class="input-group">
-                    <label>Foto / Video Produk</label>
-                    <input type="file" id="imageFiles" accept="image/*, video/mp4, video/quicktime" multiple required>
-                    <small style="color:red; font-size:11px;">Maksimal video: 10MB</small>
+                    <label>Foto Produk (Pilih > 1)</label>
+                    <input type="file" id="imageFiles" accept="image/png, image/jpeg, image/webp" multiple required>
                 </div>
                 <div class="input-group">
                     <label>Deskripsi</label>
@@ -99,11 +97,11 @@
     <div class="modal-edit" id="modal-edit">
         <div class="modal-edit-box">
             <h3>Update Foto Produk</h3>
-            <p style="font-size: 12px; color: #666;">Untuk: <b id="edit-product-name"></b>. <br><span style="color:red;">Foto/Video lama akan dihapus.</span></p>
-            <input type="file" id="editImageFiles" accept="image/*, video/mp4, video/quicktime" multiple>
+            <p style="font-size: 12px; color: #666;">Untuk: <b id="edit-product-name"></b>. <br><span style="color:red;">Foto lama akan dihapus.</span></p>
+            <input type="file" id="editImageFiles" accept="image/png, image/jpeg, image/webp" multiple>
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeEditModal()">Batal</button>
-                <button class="btn-update" id="btn-submit-edit" onclick="submitEditFoto()">Update File</button>
+                <button class="btn-update" id="btn-submit-edit" onclick="submitEditFoto()">Update Foto</button>
             </div>
         </div>
     </div>
@@ -132,26 +130,19 @@
         }
 
         const processMedia = (file) => new Promise((resolve, reject) => {
-            if (file.type.startsWith('video/')) {
-                if (file.size > 10 * 1024 * 1024) { reject(new Error(`Video maks 10MB.`)); return; }
-                const reader = new FileReader(); reader.readAsDataURL(file);
-                reader.onload = () => resolve({ filename: file.name, mimeType: file.type, base64: reader.result.split(',')[1] });
-                reader.onerror = error => reject(error);
-            } else {
-                const reader = new FileReader(); reader.readAsDataURL(file);
-                reader.onload = (e) => {
-                    const img = new Image(); img.src = e.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas'); const MAX_SIZE = 2000; 
-                        let w = img.width, h = img.height;
-                        if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } 
-                        else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
-                        canvas.width = w; canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.90).split(',')[1] });
-                    };
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); const MAX_SIZE = 2000; 
+                    let w = img.width, h = img.height;
+                    if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } 
+                    else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.85).split(',')[1] });
                 };
-            }
+            };
         });
 
         function openEditModal(id, name) {
@@ -172,7 +163,7 @@
                 showToast('✅ Berhasil diperbarui!');
                 closeEditModal(); isStockLoaded = false; loadStock(); 
             } catch (error) { showToast(error.message, true); } 
-            finally { btn.innerText = 'Update File'; btn.disabled = false; }
+            finally { btn.innerText = 'Update Foto'; btn.disabled = false; }
         }
 
         document.getElementById('formProduk').addEventListener('submit', async (e) => {
@@ -202,21 +193,17 @@
 
                 data.reverse().forEach(p => {
                     let status = p.status || 'Ready'; 
-                    let thumbRaw = p.image ? p.image.split('|')[0] : '';
-                    let isVideo = thumbRaw.startsWith('vid:');
-                    let thumbUrl = thumbRaw.replace('img:','').replace('vid:','');
-                    
-                    let imgHtml = isVideo 
-                        ? `<div class="item-img-container"><video src="${thumbUrl}" class="item-img" muted></video><div class="vid-badge">▶</div></div>` 
-                        : `<div class="item-img-container"><img src="${thumbUrl}" class="item-img"></div>`;
+                    let fileIds = p.image ? p.image.split('|') : [];
+                    let fileId = fileIds[0] || '';
+                    let thumbUrl = fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w200` : '';
                     
                     list.innerHTML += `
                         <div class="stock-item">
                             <div class="item-info">
-                                ${imgHtml}
+                                <div class="item-img-container"><img src="${thumbUrl}" class="item-img"></div>
                                 <div>
                                     <div class="item-title">${p.name}</div>
-                                    <button class="btn-edit-foto" onclick="openEditModal('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📷 Ganti File</button>
+                                    <button class="btn-edit-foto" onclick="openEditModal('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📷 Ganti Foto</button>
                                 </div>
                             </div>
                             <div class="status-controls">
