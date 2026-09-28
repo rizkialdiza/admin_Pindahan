@@ -204,11 +204,10 @@
                     let status = p.status || 'Ready'; 
                     let thumbRaw = p.image ? p.image.split('|')[0] : '';
                     let isVideo = thumbRaw.startsWith('vid:');
-                    let fileId = thumbRaw.replace('img:','').replace('vid:','');
+                    let thumbUrl = thumbRaw.replace('img:','').replace('vid:','');
                     
-                    let thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
                     let imgHtml = isVideo 
-                        ? `<div class="item-img-container"><img src="${thumbUrl}" class="item-img"><div class="vid-badge">▶</div></div>` 
+                        ? `<div class="item-img-container"><video src="${thumbUrl}" class="item-img" muted></video><div class="vid-badge">▶</div></div>` 
                         : `<div class="item-img-container"><img src="${thumbUrl}" class="item-img"></div>`;
                     
                     list.innerHTML += `
