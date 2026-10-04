@@ -3,241 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard - Elegant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>Katalog Eksklusif</title>
+    
+    <link rel="preconnect" href="https://drive.google.com">
+    <link rel="preconnect" href="https://script.google.com">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <style>
-        :root { --bg-body: #f7f7f8; --bg-card: #ffffff; --text-main: #111111; --text-muted: #666666; --border: #e5e5e5; --accent: #111111; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
-        body { background-color: var(--bg-body); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
-        
-        .container { background: var(--bg-card); padding: 35px; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04); margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); }
-        h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
-        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; }
+        :root { --primary: #111; --bg-color: #f3f4f6; --text-main: #111827; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent;}
+        body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 30px; }
 
-        .tabs { display: flex; gap: 10px; margin-bottom: 30px; background: #f0f0f0; padding: 5px; border-radius: 10px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; color: var(--text-muted); }
-        .tab-btn.active { background: #fff; color: var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fade 0.3s; }
-        @keyframes fade { from {opacity: 0;} to {opacity: 1;} }
+        .header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #eee; }
+        .header h1 { font-size: 20px; color: #111; letter-spacing: -0.5px;}
 
-        .input-group { margin-bottom: 20px; }
-        label { font-size: 13px; font-weight: 500; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-        input, textarea { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
-        input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(17,17,17,0.05); }
-        
-        .btn-submit { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; }
-        
-        .stock-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; gap: 10px;}
-        .item-info { display: flex; align-items: center; gap: 12px; flex: 1; }
-        .item-img-container { position: relative; width: 55px; height: 55px; border-radius: 8px; background: #eee; overflow: hidden; }
-        .item-img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .item-title { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
-        .btn-edit-foto { background: #f0f0f0; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #444; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;}
-        
-        .status-controls { display: flex; flex-direction: column; gap: 4px; }
-        .btn-status { padding: 6px 12px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: #fff; color: #666; transition: 0.2s;}
-        
-        .btn-status.active-Ready { background: #dcfce7; color: #166534; border-color: #166534; }
-        .btn-status.active-Presale { background: #fef08a; color: #854d0e; border-color: #854d0e; }
-        .btn-status.active-Kosong { background: #fee2e2; color: #991b1b; border-color: #991b1b; }
+        .toolbar { display: flex; gap: 10px; padding: 20px 20px 0; max-width: 1200px; margin: 0 auto; align-items: center;}
+        .search-box { flex: 1; position: relative; }
+        .search-box input { width: 100%; padding: 12px 16px 12px 42px; border-radius: 12px; border: 1px solid #e5e5e5; outline: none; font-size: 14.5px; transition: 0.2s; background: #fff;}
+        .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(17,17,17,0.1); }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #888; }
+        .sort-select { padding: 12px 14px; border-radius: 12px; border: 1px solid #e5e5e5; outline: none; font-size: 14px; background: #fff; cursor: pointer; color: #333; font-weight: 500;}
 
-        #toast { visibility: hidden; min-width: 250px; background: #111; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; bottom: 40px; transform: translateX(-50%); left: 50%; z-index: 1000;}
-        #toast.show { visibility: visible; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; padding: 20px; max-width: 1200px; margin: 0 auto; }
         
-        .modal-edit { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px;}
-        .modal-edit-box { background: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; }
-        .modal-edit-box h3 { margin-bottom: 10px; font-size: 18px; }
-        .modal-edit-box input[type="file"] { margin-bottom: 20px; width: 100%; }
-        .modal-buttons { display: flex; gap: 10px; }
-        .modal-buttons button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;}
-        .btn-cancel { background: #f0f0f0; color: #333; }
-        .btn-update { background: #111; color: #fff; }
+        .card { background: #fff; border-radius: 16px; overflow: hidden; cursor: pointer; transition: 0.3s; position: relative; border: 1px solid #f0f0f0; display: flex; flex-direction: column;}
+        .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .card-img-wrapper { position: relative; width: 100%; padding-top: 100%; background: #eaeaea;}
+        .card-img-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease-in-out;}
+        .card-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column;}
+        .card-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+        .card-price { font-size: 16px; font-weight: 700; margin-top: auto;}
+
+        .card.out-of-stock { opacity: 0.6; filter: grayscale(80%); pointer-events: none; } 
+        .badge { position: absolute; top: 10px; right: 10px; color: white; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; z-index: 2; }
+        .badge-habis { background: #dc2626; } 
+        .badge-presale { background: #d97706; } 
+        .badge-banyak-foto { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); color: white; padding: 4px 8px; border-radius: 6px; font-size: 10px; z-index: 2;}
+
+        .skeleton-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #f0f0f0; display: flex; flex-direction: column; height: 260px;}
+        .skeleton-img { width: 100%; padding-top: 100%; background: #e5e5e5; position: relative; overflow: hidden; }
+        .skeleton-text { height: 14px; background: #e5e5e5; margin: 15px 15px 5px; border-radius: 4px; position: relative; overflow: hidden; width: 80%;}
+        .skeleton-text.short { width: 50%; margin-top: 5px; height: 18px; }
+        
+        .shimmer::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: translateX(-100%); background-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0.4) 20%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0)); animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+        .status-text { grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #666; font-size: 14px; }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0, 0.7); backdrop-filter: blur(3px); z-index: 1000; align-items: flex-end; justify-content: center; }
+        .modal-content { background: #fff; width: 100%; max-width: 600px; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; animation: slideUp 0.3s; max-height: 95vh;}
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .modal-header-img { position: relative; width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 24px 24px 0 0; overflow: hidden; }
+        .image-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 100%; width: 100%; gap: 15px; padding: 0; }
+        .image-slider::-webkit-scrollbar { display: none; }
+        .image-slider img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: center; cursor: zoom-in; }
+        
+        .swipe-hint { position: absolute; bottom: 20px; right: 12px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); color: white; padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; z-index: 10; pointer-events: none;}
+        .btn-close { position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.9); width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 20px; color: #111; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 10; }
+        
+        .modal-body { padding: 24px; padding-bottom: 100px; overflow-y: auto;}
+        .modal-price { font-size: 24px; font-weight: 700; margin-bottom: 5px; color: #111;}
+        .modal-title { font-size: 18px; font-weight: 500; margin-bottom: 20px; line-height: 1.3;}
+        .modal-desc { font-size: 14.5px; color: #555; white-space: pre-line; line-height: 1.7; }
+        
+        .modal-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 15px 20px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: center; z-index: 10;}
+        
+        /* TOMBOL WA BARU - HIJAU ELEGAN */
+        .btn-buy { width: 100%; max-width: 400px; background: #25D366; color: #fff; padding: 15px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 600; font-size: 15px; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3); transition: 0.2s;}
+        .btn-buy:active { transform: scale(0.98); }
+        .btn-buy:hover { background: #128C7E; }
+
+        #zoom-viewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 2000; flex-direction: column; }
+        .zoom-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 24px; display: flex; justify-content: center; align-items: center; z-index: 2010; cursor: pointer;}
+        
+        .swiper { width: 100%; height: 100%; }
+        .swiper-slide { display: flex; align-items: center; justify-content: center; }
+        .swiper-zoom-container { width: 100%; height: 100%; }
+        .swiper-zoom-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .swiper-pagination-bullet { background: #ffffff !important; opacity: 0.5; }
+        .swiper-pagination-bullet-active { opacity: 1; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Katalog Manajemen</h2>
-        
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('upload')">Tambah Produk</button>
-            <button class="tab-btn" onclick="switchTab('stock'); loadStock();">Kelola Stok</button>
-        </div>
 
-        <div id="tab-upload" class="tab-content active">
-            <form id="formProduk">
-                <div class="input-group">
-                    <label>Nama Produk</label>
-                    <input type="text" id="name" required>
-                </div>
-                <div class="input-group">
-                    <label>Harga</label>
-                    <input type="text" id="price" required>
-                </div>
-                <div class="input-group">
-                    <label>Foto Produk (Pilih > 1)</label>
-                    <input type="file" id="imageFiles" accept="image/png, image/jpeg, image/webp" multiple required>
-                </div>
-                <div class="input-group">
-                    <label>Deskripsi</label>
-                    <textarea id="desc" rows="3" required></textarea>
-                </div>
-                <button type="submit" id="btn-submit" class="btn-submit">Simpan Produk</button>
-            </form>
-        </div>
+    <header class="header">
+        <h1>Katalog Produk</h1>
+    </header>
 
-        <div id="tab-stock" class="tab-content">
-            <div id="stock-list"><p style="text-align:center;">Memuat data...</p></div>
+    <div class="toolbar">
+        <div class="search-box">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Cari barang...">
         </div>
+        <select id="sortSelect" class="sort-select">
+            <option value="new">🌟 Terbaru</option>
+            <option value="cheap">⬇️ Termurah</option>
+            <option value="expensive">⬆️ Termahal</option>
+        </select>
     </div>
 
-    <!-- MODAL GANTI FOTO -->
-    <div class="modal-edit" id="modal-edit">
-        <div class="modal-edit-box">
-            <h3>Update Foto Produk</h3>
-            <p style="font-size: 12px; color: #666;">Untuk: <b id="edit-product-name"></b>. <br><span style="color:red;">Foto lama akan dihapus.</span></p>
-            <input type="file" id="editImageFiles" accept="image/png, image/jpeg, image/webp" multiple>
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeEditModal()">Batal</button>
-                <button class="btn-update" id="btn-submit-edit" onclick="submitEditFoto()">Update Foto</button>
+    <main class="grid-container" id="katalog-container">
+        <!-- Skeleton Loading akan muncul disini -->
+    </main>
+
+    <div class="modal-overlay" id="product-modal">
+        <div class="modal-content">
+            <div class="modal-header-img">
+                <button class="btn-close" onclick="closeModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <div class="image-slider" id="modal-slider"></div>
+                <div id="swipe-hint" class="swipe-hint">Geser ↔️</div>
+            </div>
+            <div class="modal-body">
+                <div class="modal-price" id="modal-price"></div>
+                <div class="modal-title" id="modal-title"></div>
+                <div style="font-size:12px; font-weight:700; color:#888; margin-bottom:10px;">DESKRIPSI LENGKAP</div>
+                <div class="modal-desc" id="modal-desc"></div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="modal-buy-btn" class="btn-buy" target="_blank">
+                    <!-- Ikon WhatsApp -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12.031 0C5.385 0 0 5.388 0 12.034c0 2.124.553 4.197 1.605 6.01L.027 23.996l6.105-1.601a11.964 11.964 0 005.899 1.545h.005c6.645 0 12.034-5.388 12.034-12.035C24.066 5.388 18.681 0 12.031 0zm0 21.936a9.92 9.92 0 01-5.067-1.38l-.363-.214-3.766.986.998-3.666-.235-.374A9.926 9.926 0 012.023 12.03c0-5.518 4.492-10.01 10.01-10.01 5.517 0 10.009 4.492 10.009 10.01 0 5.518-4.492 10.01-10.01 10.01zm5.492-7.514c-.301-.151-1.782-.88-2.059-.981-.277-.101-.479-.151-.68.151-.202.302-.78 .98-.957 1.182-.176.201-.353.226-.654.075-1.411-.711-2.585-1.442-3.6-2.909-.264-.383-.027-.585.123-.734.135-.135.302-.352.453-.528.151-.176.201-.302.302-.503.101-.202.05-.377-.025-.528-.076-.151-.68-1.642-.932-2.247-.246-.591-.497-.512-.68-.521-.176-.01-.377-.01-.579-.01-.201 0-.528.076-.805.377-.277.302-1.056 1.032-1.056 2.516 0 1.485 1.082 2.92 1.233 3.122.151.201 2.13 3.251 5.158 4.557.72.311 1.282.497 1.722.637.723.23 1.382.197 1.9.119.58-.088 1.782-.728 2.034-1.432.251-.704.251-1.309.176-1.432-.075-.126-.277-.201-.579-.352z"/></svg>
+                    Pesan via WhatsApp
+                </a>
             </div>
         </div>
     </div>
 
-    <div id="toast">Notifikasi</div>
+    <div id="zoom-viewer">
+        <button class="zoom-close" onclick="closeZoom()">&times;</button>
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper" id="zoom-swiper-wrapper"></div>
+            <div class="swiper-pagination"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwiWOMfOnoa1pjnVm9UefBhlGSH0mppuip16ui1H01W1Hixd4XwJRP-vZ36fl4-iFc9vw/exec';
-        let isStockLoaded = false; let currentEditId = null;
+        // GANTI DENGAN NOMOR WA ANDA
+        const NOMOR_WA = "6281360171337"; 
 
-        document.getElementById('price').addEventListener('input', function(e) {
-            let value = this.value.replace(/[^0-9]/g, ''); 
-            if (value) { this.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(value); } 
-            else { this.value = ''; }
-        });
+        const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+        
+        let allProducts = []; 
+        let currentZoomMedia = []; 
+        let swiperInstance = null; 
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).classList.add('active'); event.target.classList.add('active');
-        }
-
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById("toast"); toast.innerText = msg; 
-            toast.style.background = isError ? "#dc2626" : "#111"; toast.className = "show"; setTimeout(() => toast.className = "", 3000);
-        }
-
-        const processMedia = (file) => new Promise((resolve, reject) => {
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = (e) => {
-                const img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const MAX_SIZE = 2000; 
-                    let w = img.width, h = img.height;
-                    if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } 
-                    else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.85).split(',')[1] });
-                };
-            };
-        });
-
-        function openEditModal(id, name) {
-            currentEditId = id; document.getElementById('edit-product-name').innerText = name;
-            document.getElementById('editImageFiles').value = ''; document.getElementById('modal-edit').style.display = 'flex';
-        }
-        function closeEditModal() { document.getElementById('modal-edit').style.display = 'none'; currentEditId = null; }
-
-        async function submitEditFoto() {
-            const fileInput = document.getElementById('editImageFiles');
-            if(fileInput.files.length === 0) { alert("Silakan pilih file!"); return; }
-            const btn = document.getElementById('btn-submit-edit'); btn.innerText = 'Mengupload HD... ⏳'; btn.disabled = true;
-
-            try {
-                let mediaPromises = await Promise.all(Array.from(fileInput.files).map(f => processMedia(f)));
-                const payload = { action: 'update_image', id: currentEditId, images: mediaPromises };
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-                showToast('✅ Berhasil diperbarui!');
-                closeEditModal(); isStockLoaded = false; loadStock(); 
-            } catch (error) { showToast(error.message, true); } 
-            finally { btn.innerText = 'Update Foto'; btn.disabled = false; }
-        }
-
-        document.getElementById('formProduk').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-submit'); btn.innerText = 'Mengupload Kualitas HD... ⏳'; btn.disabled = true;
-
-            try {
-                const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, '');
-                const fileInput = document.getElementById('imageFiles');
-                let mediaPromises = await Promise.all(Array.from(fileInput.files).map(f => processMedia(f)));
-                const payload = { action: 'create', name: document.getElementById('name').value, price: rawPrice, desc: document.getElementById('desc').value, images: mediaPromises };
-                
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-                showToast('Produk berhasil ditambahkan!');
-                document.getElementById('formProduk').reset(); isStockLoaded = false; 
-            } catch (error) { showToast(error.message, true); } 
-            finally { btn.innerText = 'Simpan Produk'; btn.disabled = false; }
-        });
-
-        async function loadStock() {
-            if (isStockLoaded) return; 
-            const list = document.getElementById('stock-list'); list.innerHTML = '<p style="text-align:center;">Mengambil data... ⚡</p>';
-            try {
-                const res = await fetch(`${API_URL}?action=list_stock&t=${new Date().getTime()}`);
-                const data = await res.json(); list.innerHTML = '';
-                if(data.length === 0) return list.innerHTML = '<p style="text-align:center;">Belum ada produk.</p>';
-
-                data.reverse().forEach(p => {
-                    let status = p.status || 'Ready'; 
-                    let fileIds = p.image ? p.image.split('|') : [];
-                    let fileId = fileIds[0] || '';
-                    let thumbUrl = fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w200` : '';
-                    
-                    list.innerHTML += `
-                        <div class="stock-item">
-                            <div class="item-info">
-                                <div class="item-img-container"><img src="${thumbUrl}" class="item-img"></div>
-                                <div>
-                                    <div class="item-title">${p.name}</div>
-                                    <button class="btn-edit-foto" onclick="openEditModal('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📷 Ganti Foto</button>
-                                </div>
-                            </div>
-                            <div class="status-controls">
-                                <button class="btn-status ${status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${p.id}', 'Ready', this)">Ready</button>
-                                <button class="btn-status ${status === 'Presale' ? 'active-Presale' : ''}" onclick="updateStock('${p.id}', 'Presale', this)">Presale</button>
-                                <button class="btn-status ${status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${p.id}', 'Kosong', this)">Habis</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                isStockLoaded = true;
-            } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat.</p>'; }
-        }
-
-        async function updateStock(id, newStatus, btnElement) {
-            const container = btnElement.parentElement;
-            const buttons = container.querySelectorAll('.btn-status');
-            let oldStatus = 'Ready';
-            buttons.forEach(b => { if(b.classList.contains('active-Ready')) oldStatus = 'Ready'; if(b.classList.contains('active-Presale')) oldStatus = 'Presale'; if(b.classList.contains('active-Kosong')) oldStatus = 'Kosong'; });
-            buttons.forEach(b => { b.classList.remove('active-Ready', 'active-Presale', 'active-Kosong'); b.disabled = true; });
-            btnElement.classList.add('active-' + newStatus); btnElement.innerText = '...';
-
-            try {
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'update_status', id: id, status: newStatus }) });
-                showToast(`✅ Status tersimpan: ${newStatus}`);
-            } catch (e) {
-                showToast(`❌ Gagal mengubah status!`, true);
-                buttons.forEach(b => b.classList.remove('active-' + newStatus));
-                const oldBtn = Array.from(buttons).find(b => b.getAttribute('onclick').includes(oldStatus));
-                if(oldBtn) oldBtn.classList.add('active-' + oldStatus);
-            } finally {
-                buttons.forEach(b => b.disabled = false); btnElement.innerText = newStatus === 'Kosong' ? 'Habis' : newStatus;
+        function renderSkeleton() {
+            const container = document.getElementById('katalog-container');
+            container.innerHTML = '';
+            for(let i=0; i<8; i++) {
+                container.innerHTML += `
+                    <div class="skeleton-card">
+                        <div class="skeleton-img shimmer"></div>
+                        <div class="skeleton-text shimmer"></div>
+                        <div class="skeleton-text short shimmer"></div>
+                    </div>
+                `;
             }
         }
+
+        async function fetchProduk() {
+            renderSkeleton(); 
+            try {
+                const res = await fetch(`${API_URL}?t=${new Date().getTime()}`);
+                const data = await res.json();
+                
+                const container = document.getElementById('katalog-container');
+                if (!data || data.length === 0) {
+                    return container.innerHTML = '<div class="status-text">Katalog kosong.</div>';
+                }
+
+                allProducts = data.reverse(); 
+                applyFilterAndSort(); 
+
+            } catch (error) { 
+                document.getElementById('katalog-container').innerHTML = '<div class="status-text" style="color:red;">Koneksi terputus. Muat ulang.</div>'; 
+            }
+        }
+
+        function applyFilterAndSort() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const sortVal = document.getElementById('sortSelect').value;
+            let filtered = [...allProducts];
+
+            if (query) {
+                const keywords = query.split(/\s+/);
+                filtered = filtered.filter(p => {
+                    const nameLower = p.name.toLowerCase();
+                    return keywords.every(kw => nameLower.includes(kw)); 
+                });
+            }
+
+            if (sortVal === 'cheap') {
+                filtered.sort((a, b) => Number(a.price) - Number(b.price)); 
+            } else if (sortVal === 'expensive') {
+                filtered.sort((a, b) => Number(b.price) - Number(a.price)); 
+            }
+
+            renderKatalog(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilterAndSort);
+        document.getElementById('sortSelect').addEventListener('change', applyFilterAndSort);
+
+        function renderKatalog(dataToRender) {
+            const container = document.getElementById('katalog-container');
+            container.innerHTML = ''; 
+
+            if (dataToRender.length === 0) {
+                container.innerHTML = '<div class="status-text">Produk tidak ditemukan 😔</div>';
+                return;
+            }
+
+            dataToRender.forEach(produk => {
+                const hrg = formatRupiah(produk.price);
+                
+                let mediaIds = produk.image ? produk.image.split('|').map(url => url.trim()) : [];
+                let firstId = mediaIds[0] || '';
+
+                const isHabis = produk.status === "Kosong";
+                const isPresale = produk.status === "Presale";
+
+                let badgeHtml = '';
+                if (isHabis) { badgeHtml = '<div class="badge badge-habis">STOK HABIS</div>'; } 
+                else if (isPresale) { badgeHtml = '<div class="badge badge-presale">PRESALE</div>'; }
+
+                let thumbUrl = firstId ? `https://drive.google.com/thumbnail?id=${firstId}&sz=w300` : '';
+
+                const card = document.createElement('div');
+                card.className = `card ${isHabis ? 'out-of-stock' : ''}`;
+                
+                card.innerHTML = `
+                    ${badgeHtml}
+                    <div class="card-img-wrapper">
+                        <img src="${thumbUrl}" loading="lazy" onload="this.style.opacity=1" style="opacity:0;">
+                        ${mediaIds.length > 1 ? '<div class="badge-banyak-foto">Ada ' + mediaIds.length + ' Foto</div>' : ''}
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">${produk.name}</div>
+                        <div class="card-price">${hrg}</div>
+                    </div>
+                `;
+
+                if(!isHabis) {
+                    card.addEventListener('click', () => openModal(produk, hrg, mediaIds, isPresale));
+                }
+                container.appendChild(card);
+            });
+        }
+
+        const modal = document.getElementById('product-modal');
+        const zoomViewer = document.getElementById('zoom-viewer');
+        
+        function openModal(produk, hrg, mediaArray, isPresale) {
+            currentZoomMedia = mediaArray; 
+            let sliderHtml = '';
+            
+            mediaArray.forEach((fileId, index) => {
+                if(fileId) {
+                    let imgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w2500`;
+                    sliderHtml += `<img src="${imgUrl}" onclick="openZoom(${index})" loading="lazy">`;
+                }
+            });
+            document.getElementById('modal-slider').innerHTML = sliderHtml;
+            document.getElementById('swipe-hint').style.display = mediaArray.length > 1 ? 'block' : 'none';
+
+            document.getElementById('modal-title').innerText = produk.name;
+            document.getElementById('modal-price').innerText = hrg;
+            document.getElementById('modal-desc').innerText = produk.desc;
+            
+            // FUNGSI PEMBERSIH SPASI AGAR TEKS BOLD WA TIDAK ERROR
+            let cleanName = produk.name.trim();
+
+            let textWA = isPresale 
+                ? `Halo, saya tertarik ikut PRE-ORDER:\n\n*${cleanName}*\nHarga: ${hrg}\n\nBagaimana sistemnya?`
+                : `Halo, saya mau pesan:\n\n*${cleanName}*\nHarga: ${hrg}`;
+
+            document.getElementById('modal-buy-btn').href = `https://wa.me/${NOMOR_WA}?text=${encodeURIComponent(textWA)}`;
+            
+            history.pushState({ state: 'modal_open' }, '');
+            modal.style.display = 'flex';
+        }
+
+        function openZoom(startIndex) {
+            let zoomHtml = '';
+            currentZoomMedia.forEach((fileId) => {
+                if(fileId) {
+                    let imgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w2500`;
+                    zoomHtml += `<div class="swiper-slide"><div class="swiper-zoom-container"><img src="${imgUrl}"></div></div>`;
+                }
+            });
+            
+            document.getElementById('zoom-swiper-wrapper').innerHTML = zoomHtml;
+            history.pushState({ state: 'zoom_open' }, '');
+            zoomViewer.style.display = 'flex';
+
+            if(swiperInstance) { swiperInstance.destroy(true, true); }
+            
+            swiperInstance = new Swiper(".mySwiper", {
+                zoom: { maxRatio: 3 },
+                initialSlide: startIndex,
+                spaceBetween: 30,
+                pagination: { el: ".swiper-pagination", clickable: true },
+            });
+        }
+
+        function closeModal() { history.back(); }
+        function closeZoom() { history.back(); }
+
+        window.addEventListener('popstate', function(e) {
+            if (!e.state) {
+                modal.style.display = 'none';
+                zoomViewer.style.display = 'none';
+                document.getElementById('modal-slider').innerHTML = ''; 
+                document.getElementById('zoom-swiper-wrapper').innerHTML = ''; 
+            } else if (e.state.state === 'modal_open') {
+                zoomViewer.style.display = 'none';
+                modal.style.display = 'flex';
+                document.getElementById('zoom-swiper-wrapper').innerHTML = ''; 
+            }
+        });
+
+        modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
+
+        fetchProduk();
     </script>
 </body>
 </html>
