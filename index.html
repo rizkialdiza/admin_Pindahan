@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard - Elegant</title>
+    <title>Owner Dashboard - Firebase Turbo</title>
     
-    <link rel="preconnect" href="https://script.google.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
     <style>
         :root { --bg-body: #f7f7f8; --bg-card: #ffffff; --text-main: #111111; --text-muted: #666666; --border: #e5e5e5; --accent: #111111; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
@@ -14,9 +18,8 @@
         
         .container { background: var(--bg-card); padding: 35px; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04); margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); }
         h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
-        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; }
 
-        .tabs { display: flex; gap: 10px; margin-bottom: 30px; background: #f0f0f0; padding: 5px; border-radius: 10px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #f0f0f0; padding: 5px; border-radius: 10px; }
         .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; color: var(--text-muted); }
         .tab-btn.active { background: #fff; color: var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
@@ -39,21 +42,19 @@
         .item-title { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
         
         .btn-group-action { display: flex; gap: 6px; }
-        .btn-edit { background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #444; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s;}
-        .btn-edit:hover { background: #e5e5e5; }
-        
-        .btn-delete { background: #fee2e2; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #991b1b; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s;}
-        .btn-delete:hover { background: #fecaca; }
+        .btn-edit, .btn-delete { border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s;}
+        .btn-edit { background: #f0f0f0; color: #444; } .btn-edit:hover { background: #e5e5e5; }
+        .btn-delete { background: #fee2e2; color: #991b1b; } .btn-delete:hover { background: #fecaca; }
 
         .status-controls { display: flex; flex-direction: column; gap: 4px; }
         .btn-status { padding: 6px 12px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: #fff; color: #666; transition: 0.2s;}
-        
         .btn-status.active-Ready { background: #dcfce7; color: #166534; border-color: #166534; }
         .btn-status.active-Presale { background: #fef08a; color: #854d0e; border-color: #854d0e; }
         .btn-status.active-Kosong { background: #fee2e2; color: #991b1b; border-color: #991b1b; }
 
-        .skeleton-img { background: #e5e5e5; position: relative; overflow: hidden; }
-        .skeleton-text { background: #e5e5e5; border-radius: 4px; position: relative; overflow: hidden; }
+        .btn-migrate { background: #fef08a; color: #854d0e; border: 1px solid #eab308; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; margin-bottom: 20px; cursor: pointer;}
+
+        .skeleton-img, .skeleton-text { background: #e5e5e5; position: relative; overflow: hidden; border-radius: 4px; }
         .shimmer::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: translateX(-100%); background-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0.4) 20%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0)); animation: shimmer 1.5s infinite; }
         
         #toast { visibility: hidden; min-width: 250px; background: #111; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; bottom: 40px; transform: translateX(-50%); left: 50%; z-index: 1000;}
@@ -61,17 +62,14 @@
         
         .modal-edit { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px;}
         .modal-edit-box { background: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto;}
-        .modal-edit-box h3 { margin-bottom: 20px; font-size: 18px; }
-        .modal-edit-box .input-group { margin-bottom: 15px; }
         .modal-buttons { display: flex; gap: 10px; margin-top: 20px;}
         .modal-buttons button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;}
-        .btn-cancel { background: #f0f0f0; color: #333; }
-        .btn-update { background: #111; color: #fff; }
+        .btn-cancel { background: #f0f0f0; color: #333; } .btn-update { background: #111; color: #fff; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Katalog Manajemen</h2>
+        <h2>Katalog Manajemen ⚡</h2>
         
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('upload')">Tambah Produk</button>
@@ -89,18 +87,21 @@
                     <input type="text" id="price" required>
                 </div>
                 <div class="input-group">
-                    <label>Foto Produk (Dapat dipilih lebih dari 1)</label>
+                    <label>Foto Produk (Pilih > 1)</label>
                     <input type="file" id="imageFiles" accept="image/png, image/jpeg, image/webp" multiple required>
                 </div>
                 <div class="input-group">
                     <label>Deskripsi</label>
                     <textarea id="desc" rows="3" required></textarea>
                 </div>
-                <button type="submit" id="btn-submit" class="btn-submit">Simpan Produk</button>
+                <button type="submit" id="btn-submit" class="btn-submit">Upload Cepat 🚀</button>
             </form>
         </div>
 
         <div id="tab-stock" class="tab-content">
+            <!-- Tombol Sekali Pakai untuk Migrasi Data -->
+            <button class="btn-migrate" id="btn-migrate" onclick="migrasiDataLama()">📥 Tarik Data Lama dari Google Sheets</button>
+            
             <div id="stock-list"></div>
         </div>
     </div>
@@ -108,26 +109,15 @@
     <!-- MODAL EDIT -->
     <div class="modal-edit" id="modal-edit">
         <div class="modal-edit-box">
-            <h3>Edit Produk</h3>
-            
-            <div class="input-group">
-                <label>Nama Produk</label>
-                <input type="text" id="editName" required>
-            </div>
-            <div class="input-group">
-                <label>Harga</label>
-                <input type="text" id="editPrice" required>
-            </div>
-            <div class="input-group">
-                <label>Deskripsi</label>
-                <textarea id="editDesc" rows="3" required></textarea>
-            </div>
+            <h3 style="margin-bottom: 20px;">Edit Produk</h3>
+            <div class="input-group"><label>Nama Produk</label><input type="text" id="editName" required></div>
+            <div class="input-group"><label>Harga</label><input type="text" id="editPrice" required></div>
+            <div class="input-group"><label>Deskripsi</label><textarea id="editDesc" rows="3" required></textarea></div>
             <div class="input-group">
                 <label>Ganti Foto (Opsional)</label>
                 <p style="font-size: 11px; color: #666; margin-top:-5px; margin-bottom:8px;">*Kosongkan jika tidak ingin mengganti foto lama.</p>
                 <input type="file" id="editImageFiles" accept="image/png, image/jpeg, image/webp" multiple>
             </div>
-            
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeEditModal()">Batal</button>
                 <button class="btn-update" id="btn-submit-edit" onclick="submitEditProduk()">Simpan Edit</button>
@@ -138,16 +128,29 @@
     <div id="toast">Notifikasi</div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwiWOMfOnoa1pjnVm9UefBhlGSH0mppuip16ui1H01W1Hixd4XwJRP-vZ36fl4-iFc9vw/exec';
-        let isStockLoaded = false; let currentEditId = null;
+        // INISIALISASI FIREBASE
+        firebase.initializeApp({
+            apiKey: "AIzaSyBZgM4UhREna78QDErqZRoQAxQJOV2or-g",
+            authDomain: "katalogpindahan.firebaseapp.com",
+            projectId: "katalogpindahan",
+            storageBucket: "katalogpindahan.firebasestorage.app",
+            messagingSenderId: "669980037618",
+            appId: "1:669980037618:web:f8edfb7d9769390bb61b6b",
+            measurementId: "G-VE15CDCC0Y"
+        });
+        const db = firebase.firestore();
+
+        // KUNCI IMGBB ANDA (Tetap aktif untuk upload gambar baru)
+        const IMGBB_API_KEY = '9936bb39d0e369af97d393b546823709'; 
+        
+        let currentEditId = null;
 
         document.getElementById('price').addEventListener('input', formatRupiahInput);
         document.getElementById('editPrice').addEventListener('input', formatRupiahInput);
 
         function formatRupiahInput(e) {
             let value = this.value.replace(/[^0-9]/g, ''); 
-            if (value) { this.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(value); } 
-            else { this.value = ''; }
+            if (value) { this.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(value); } else { this.value = ''; }
         }
 
         function switchTab(tab) {
@@ -161,36 +164,132 @@
             toast.style.background = isError ? "#dc2626" : "#111"; toast.className = "show"; setTimeout(() => toast.className = "", 3000);
         }
 
-        const processMedia = (file) => new Promise((resolve, reject) => {
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = (e) => {
-                const img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const MAX_SIZE = 2000; 
-                    let w = img.width, h = img.height;
-                    if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } 
-                    else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve({ filename: file.name, mimeType: 'image/jpeg', base64: canvas.toDataURL('image/jpeg', 0.85).split(',')[1] });
-                };
-            };
+        async function uploadToImgBB(file) {
+            const formData = new FormData(); formData.append('image', file);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) return data.data.url; 
+            throw new Error("Gagal upload ke ImgBB");
+        }
+
+        // FUNGSI MIGRASI OTOMATIS (Google Sheets ke Firebase)
+        async function migrasiDataLama() {
+            if(!confirm("Yakin ingin memindahkan data dari Google Sheets ke Firebase?\n\nCatatan: Proses ini butuh waktu sekitar 10-30 detik. Jangan tutup halaman.")) return;
+            const btnMigrate = document.getElementById('btn-migrate');
+            btnMigrate.innerText = "Menyedot Data... ⏳"; btnMigrate.disabled = true;
+
+            try {
+                // Link Google Sheets Lama Anda
+                const API_LAMA = 'https://script.google.com/macros/s/AKfycbwiWOMfOnoa1pjnVm9UefBhlGSH0mppuip16ui1H01W1Hixd4XwJRP-vZ36fl4-iFc9vw/exec';
+                const res = await fetch(`${API_LAMA}?t=${new Date().getTime()}`);
+                const dataLama = await res.json();
+
+                for(let i = 0; i < dataLama.length; i++) {
+                    let p = dataLama[i];
+                    await db.collection("products").doc(p.id.toString()).set({
+                        name: p.name,
+                        price: p.price,
+                        desc: p.desc,
+                        image: p.image, // URL Google Drive lama tetap aman
+                        status: p.status,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                showToast("✅ Migrasi Berhasil! Sistem kini 100% Firebase.");
+                btnMigrate.style.display = "none"; 
+                loadStock();
+            } catch(e) {
+                showToast("Gagal migrasi: " + e.message, true);
+                btnMigrate.innerText = "Coba Lagi Migrasi"; btnMigrate.disabled = false;
+            }
+        }
+        
+        document.getElementById('formProduk').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit'); btn.innerText = 'Uploading... 🚀'; btn.disabled = true;
+            try {
+                const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, '');
+                const fileInput = document.getElementById('imageFiles');
+                
+                let imgUrls = await Promise.all(Array.from(fileInput.files).map(f => uploadToImgBB(f)));
+                
+                await db.collection("products").add({
+                    name: document.getElementById('name').value,
+                    price: rawPrice,
+                    desc: document.getElementById('desc').value,
+                    image: imgUrls.join('|'),
+                    status: 'Ready',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast('✅ Produk ditambahkan!');
+                document.getElementById('formProduk').reset();
+            } catch (error) { showToast(error.message, true); } 
+            finally { btn.innerText = 'Upload Cepat 🚀'; btn.disabled = false; }
         });
 
-        // FUNGSI HAPUS
-        async function deleteProduk(id, name) {
-            if(!confirm(`YAKIN INGIN MENGHAPUS "${name}"?\nData dan foto di Google Drive akan terhapus permanen.`)) return;
-
-            showToast("Sedang menghapus data...");
+        async function loadStock() {
+            const list = document.getElementById('stock-list');
+            list.innerHTML = '<div style="text-align:center;">Memuat data kilat... ⚡</div>';
+            
             try {
-                const payload = { action: 'delete_product', id: id };
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-                showToast('✅ Produk berhasil dihapus!');
-                isStockLoaded = false; 
-                loadStock(); 
-            } catch (error) { 
-                showToast('Gagal menghapus produk.', true); 
-            }
+                const snapshot = await db.collection("products").orderBy("createdAt", "desc").get();
+                list.innerHTML = '';
+                
+                if(snapshot.empty) {
+                    list.innerHTML = '<p style="text-align:center;">Belum ada produk di Firebase. Silakan klik tombol Kuning di atas untuk menarik data.</p>';
+                    return;
+                }
+                
+                document.getElementById('btn-migrate').style.display = 'none';
+
+                snapshot.forEach(doc => {
+                    const p = doc.data(); const id = doc.id;
+                    let fileIds = p.image ? p.image.split('|') : []; let firstId = fileIds[0] || '';
+                    
+                    let thumbUrl = firstId.startsWith('http') ? firstId : (firstId ? `https://drive.google.com/thumbnail?id=${firstId}&sz=w200` : '');
+                    
+                    list.innerHTML += `
+                        <div class="stock-item">
+                            <div class="item-info">
+                                <div class="item-img-container"><img src="${thumbUrl}" class="item-img" loading="lazy"></div>
+                                <div>
+                                    <div class="item-title">${p.name}</div>
+                                    <div class="btn-group-action">
+                                        <button class="btn-edit" onclick="openEditModal('${id}', '${p.name.replace(/'/g, "\\'")}', '${p.price}', '${encodeURIComponent(p.desc)}')">✏️ Edit</button>
+                                        <button class="btn-delete" onclick="deleteProduk('${id}', '${p.name.replace(/'/g, "\\'")}')">🗑️ Hapus</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="status-controls">
+                                <button class="btn-status ${p.status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${id}', 'Ready', this)">Ready</button>
+                                <button class="btn-status ${p.status === 'Presale' ? 'active-Presale' : ''}" onclick="updateStock('${id}', 'Presale', this)">Presale</button>
+                                <button class="btn-status ${p.status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${id}', 'Kosong', this)">Habis</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat data.</p>'; }
+        }
+
+        async function updateStock(id, newStatus, btnElement) {
+            const container = btnElement.parentElement; const buttons = container.querySelectorAll('.btn-status');
+            buttons.forEach(b => { b.classList.remove('active-Ready', 'active-Presale', 'active-Kosong'); b.disabled = true; });
+            btnElement.classList.add('active-' + newStatus); btnElement.innerText = '...';
+            try {
+                await db.collection("products").doc(id).update({ status: newStatus });
+                showToast(`✅ Status: ${newStatus}`);
+            } catch (e) { showToast(`❌ Gagal!`, true); } 
+            finally { buttons.forEach(b => b.disabled = false); btnElement.innerText = newStatus === 'Kosong' ? 'Habis' : newStatus; }
+        }
+
+        async function deleteProduk(id, name) {
+            if(!confirm(`YAKIN INGIN MENGHAPUS "${name}"?`)) return;
+            showToast("Sedang menghapus...");
+            try {
+                await db.collection("products").doc(id).delete();
+                showToast('✅ Dihapus!'); loadStock(); 
+            } catch (error) { showToast('Gagal hapus.', true); }
         }
 
         function openEditModal(id, name, price, descEncoded) {
@@ -201,7 +300,6 @@
             document.getElementById('editImageFiles').value = ''; 
             document.getElementById('modal-edit').style.display = 'flex';
         }
-        
         function closeEditModal() { document.getElementById('modal-edit').style.display = 'none'; currentEditId = null; }
 
         async function submitEditProduk() {
@@ -209,124 +307,19 @@
             const editPrice = document.getElementById('editPrice').value.replace(/[^0-9]/g, '');
             const editDesc = document.getElementById('editDesc').value;
             const fileInput = document.getElementById('editImageFiles');
-
-            if(!editName || !editPrice || !editDesc) { alert("Data teks tidak boleh kosong!"); return; }
-
             const btn = document.getElementById('btn-submit-edit'); 
             btn.innerText = 'Menyimpan... ⏳'; btn.disabled = true;
 
             try {
-                let mediaPromises = [];
+                let updates = { name: editName, price: editPrice, desc: editDesc };
                 if (fileInput.files.length > 0) {
-                    mediaPromises = await Promise.all(Array.from(fileInput.files).map(f => processMedia(f)));
+                    let imgUrls = await Promise.all(Array.from(fileInput.files).map(f => uploadToImgBB(f)));
+                    updates.image = imgUrls.join('|');
                 }
-
-                const payload = { action: 'edit_product', id: currentEditId, name: editName, price: editPrice, desc: editDesc, images: mediaPromises };
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-                showToast('✅ Produk berhasil diubah!');
-                closeEditModal(); 
-                isStockLoaded = false; 
-                loadStock(); 
-            } catch (error) { showToast(error.message, true); } 
+                await db.collection("products").doc(currentEditId).update(updates);
+                showToast('✅ Tersimpan!'); closeEditModal(); loadStock(); 
+            } catch (error) { showToast("Gagal simpan", true); } 
             finally { btn.innerText = 'Simpan Edit'; btn.disabled = false; }
-        }
-
-        document.getElementById('formProduk').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-submit'); btn.innerText = 'Mengupload Kualitas HD... ⏳'; btn.disabled = true;
-
-            try {
-                const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, '');
-                const fileInput = document.getElementById('imageFiles');
-                let mediaPromises = await Promise.all(Array.from(fileInput.files).map(f => processMedia(f)));
-                const payload = { action: 'create', name: document.getElementById('name').value, price: rawPrice, desc: document.getElementById('desc').value, images: mediaPromises };
-                
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-                showToast('Produk berhasil ditambahkan!');
-                document.getElementById('formProduk').reset(); isStockLoaded = false; 
-            } catch (error) { showToast(error.message, true); } 
-            finally { btn.innerText = 'Simpan Produk'; btn.disabled = false; }
-        });
-
-        function renderSkeletonAdmin() {
-            const list = document.getElementById('stock-list');
-            list.innerHTML = '';
-            for(let i=0; i<4; i++) {
-                list.innerHTML += `
-                    <div class="stock-item">
-                        <div class="item-info">
-                            <div class="skeleton-img shimmer" style="width: 55px; height: 55px; border-radius: 8px; flex-shrink: 0;"></div>
-                            <div style="flex: 1;">
-                                <div class="skeleton-text shimmer" style="height: 14px; width: 80%; margin-bottom: 6px;"></div>
-                                <div class="skeleton-text shimmer" style="height: 12px; width: 40%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        async function loadStock() {
-            if (isStockLoaded) return; 
-            renderSkeletonAdmin();
-            
-            try {
-                const res = await fetch(`${API_URL}?action=list_stock&t=${new Date().getTime()}`);
-                const data = await res.json(); 
-                const list = document.getElementById('stock-list');
-                list.innerHTML = '';
-                
-                if(data.length === 0) return list.innerHTML = '<p style="text-align:center;">Belum ada produk.</p>';
-
-                data.reverse().forEach(p => {
-                    let status = p.status || 'Ready'; 
-                    let fileIds = p.image ? p.image.split('|') : [];
-                    let fileId = fileIds[0] || '';
-                    let thumbUrl = fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w200` : '';
-                    
-                    list.innerHTML += `
-                        <div class="stock-item">
-                            <div class="item-info">
-                                <div class="item-img-container"><img src="${thumbUrl}" class="item-img" loading="lazy"></div>
-                                <div>
-                                    <div class="item-title">${p.name}</div>
-                                    <div class="btn-group-action">
-                                        <button class="btn-edit" onclick="openEditModal('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.price}', '${encodeURIComponent(p.desc)}')">✏️ Edit</button>
-                                        <button class="btn-delete" onclick="deleteProduk('${p.id}', '${p.name.replace(/'/g, "\\'")}')">🗑️ Hapus</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="status-controls">
-                                <button class="btn-status ${status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${p.id}', 'Ready', this)">Ready</button>
-                                <button class="btn-status ${status === 'Presale' ? 'active-Presale' : ''}" onclick="updateStock('${p.id}', 'Presale', this)">Presale</button>
-                                <button class="btn-status ${status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${p.id}', 'Kosong', this)">Habis</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                isStockLoaded = true;
-            } catch (e) { document.getElementById('stock-list').innerHTML = '<p style="text-align:center; color:red;">Gagal memuat data.</p>'; }
-        }
-
-        async function updateStock(id, newStatus, btnElement) {
-            const container = btnElement.parentElement;
-            const buttons = container.querySelectorAll('.btn-status');
-            let oldStatus = 'Ready';
-            buttons.forEach(b => { if(b.classList.contains('active-Ready')) oldStatus = 'Ready'; if(b.classList.contains('active-Presale')) oldStatus = 'Presale'; if(b.classList.contains('active-Kosong')) oldStatus = 'Kosong'; });
-            buttons.forEach(b => { b.classList.remove('active-Ready', 'active-Presale', 'active-Kosong'); b.disabled = true; });
-            btnElement.classList.add('active-' + newStatus); btnElement.innerText = '...';
-
-            try {
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'update_status', id: id, status: newStatus }) });
-                showToast(`✅ Status tersimpan: ${newStatus}`);
-            } catch (e) {
-                showToast(`❌ Gagal mengubah status!`, true);
-                buttons.forEach(b => b.classList.remove('active-' + newStatus));
-                const oldBtn = Array.from(buttons).find(b => b.getAttribute('onclick').includes(oldStatus));
-                if(oldBtn) oldBtn.classList.add('active-' + oldStatus);
-            } finally {
-                buttons.forEach(b => b.disabled = false); btnElement.innerText = newStatus === 'Kosong' ? 'Habis' : newStatus;
-            }
         }
     </script>
 </body>
