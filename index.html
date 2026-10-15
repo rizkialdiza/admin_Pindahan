@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>Owner Dashboard - Firebase Turbo</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
@@ -48,9 +48,9 @@
 
         .status-controls { display: flex; flex-direction: column; gap: 4px; }
         .btn-status { padding: 6px 12px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: #fff; color: #666; transition: 0.2s;}
-        .btn-status.active-Ready { background: #dcfce7; color: #166534; border-color: #166534; }
+        .btn-status.active-Ready { background: #ffffff; color: #111; border-color: #111; }
         .btn-status.active-Presale { background: #fef08a; color: #854d0e; border-color: #854d0e; }
-        .btn-status.active-Kosong { background: #fee2e2; color: #991b1b; border-color: #991b1b; }
+        .btn-status.active-Kosong { background: #dcfce7; color: #166534; border-color: #166534; } 
 
         .btn-migrate { background: #fef08a; color: #854d0e; border: 1px solid #eab308; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; margin-bottom: 20px; cursor: pointer;}
 
@@ -61,10 +61,18 @@
         #toast.show { visibility: visible; }
         
         .modal-edit { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px;}
-        .modal-edit-box { background: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto;}
+        .modal-edit-box { background: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto;}
         .modal-buttons { display: flex; gap: 10px; margin-top: 20px;}
         .modal-buttons button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;}
         .btn-cancel { background: #f0f0f0; color: #333; } .btn-update { background: #111; color: #fff; }
+        
+        .total-badge { background: #111; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin-bottom: 15px;}
+
+        /* CSS KHUSUS CONTAINER EDIT FOTO */
+        .preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .preview-thumb { position: relative; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; background: #f0f0f0; }
+        .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .btn-remove-img { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -72,8 +80,8 @@
         <h2>Katalog Manajemen ⚡</h2>
         
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('upload')">Tambah Produk</button>
-            <button class="tab-btn" onclick="switchTab('stock'); loadStock();">Kelola Stok</button>
+            <button class="tab-btn active" onclick="switchTab('upload', this)">Tambah Produk</button>
+            <button class="tab-btn" onclick="switchTab('stock', this); loadStock();">Kelola Stok</button>
         </div>
 
         <div id="tab-upload" class="tab-content active">
@@ -99,25 +107,30 @@
         </div>
 
         <div id="tab-stock" class="tab-content">
-            <!-- Tombol Sekali Pakai untuk Migrasi Data -->
             <button class="btn-migrate" id="btn-migrate" onclick="migrasiDataLama()">📥 Tarik Data Lama dari Google Sheets</button>
-            
+            <div id="total-stock-container"></div>
             <div id="stock-list"></div>
         </div>
     </div>
 
-    <!-- MODAL EDIT -->
+    <!-- MODAL EDIT INTERAKTIF -->
     <div class="modal-edit" id="modal-edit">
         <div class="modal-edit-box">
             <h3 style="margin-bottom: 20px;">Edit Produk</h3>
             <div class="input-group"><label>Nama Produk</label><input type="text" id="editName" required></div>
             <div class="input-group"><label>Harga</label><input type="text" id="editPrice" required></div>
             <div class="input-group"><label>Deskripsi</label><textarea id="editDesc" rows="3" required></textarea></div>
+            
             <div class="input-group">
-                <label>Ganti Foto (Opsional)</label>
-                <p style="font-size: 11px; color: #666; margin-top:-5px; margin-bottom:8px;">*Kosongkan jika tidak ingin mengganti foto lama.</p>
+                <label>Foto Saat Ini (Klik × untuk hapus)</label>
+                <div class="preview-grid" id="edit-image-preview"></div>
+            </div>
+
+            <div class="input-group">
+                <label>Tambah Foto Baru (+)</label>
                 <input type="file" id="editImageFiles" accept="image/png, image/jpeg, image/webp" multiple>
             </div>
+
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeEditModal()">Batal</button>
                 <button class="btn-update" id="btn-submit-edit" onclick="submitEditProduk()">Simpan Edit</button>
@@ -128,22 +141,20 @@
     <div id="toast">Notifikasi</div>
 
     <script>
-        // INISIALISASI FIREBASE
         firebase.initializeApp({
-            apiKey: "AIzaSyBZgM4UhREna78QDErqZRoQAxQJOV2or-g",
-            authDomain: "katalogpindahan.firebaseapp.com",
-            projectId: "katalogpindahan",
-            storageBucket: "katalogpindahan.firebasestorage.app",
-            messagingSenderId: "669980037618",
-            appId: "1:669980037618:web:f8edfb7d9769390bb61b6b",
-            measurementId: "G-VE15CDCC0Y"
+          apiKey: "AIzaSyBZgM4UhREna78QDErqZRoQAxQJOV2or-g",
+          authDomain: "katalogpindahan.firebaseapp.com",
+          projectId: "katalogpindahan",
+          storageBucket: "katalogpindahan.firebasestorage.app",
+          messagingSenderId: "669980037618",
+          appId: "1:669980037618:web:f8edfb7d9769390bb61b6b",
+          measurementId: "G-VE15CDCC0Y"
         });
         const db = firebase.firestore();
-
-        // KUNCI IMGBB ANDA (Tetap aktif untuk upload gambar baru)
         const IMGBB_API_KEY = '9936bb39d0e369af97d393b546823709'; 
         
         let currentEditId = null;
+        let currentEditingImages = []; // Menyimpan list gambar aktif saat mode edit
 
         document.getElementById('price').addEventListener('input', formatRupiahInput);
         document.getElementById('editPrice').addEventListener('input', formatRupiahInput);
@@ -153,10 +164,11 @@
             if (value) { this.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(value); } else { this.value = ''; }
         }
 
-        function switchTab(tab) {
+        function switchTab(tab, btnElement) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).classList.add('active'); event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active'); 
+            if(btnElement) btnElement.classList.add('active');
         }
 
         function showToast(msg, isError = false) {
@@ -172,103 +184,87 @@
             throw new Error("Gagal upload ke ImgBB");
         }
 
-        // FUNGSI MIGRASI OTOMATIS (Google Sheets ke Firebase)
         async function migrasiDataLama() {
-            if(!confirm("Yakin ingin memindahkan data dari Google Sheets ke Firebase?\n\nCatatan: Proses ini butuh waktu sekitar 10-30 detik. Jangan tutup halaman.")) return;
-            const btnMigrate = document.getElementById('btn-migrate');
-            btnMigrate.innerText = "Menyedot Data... ⏳"; btnMigrate.disabled = true;
-
+            if(!confirm("Yakin ingin memindahkan data dari Google Sheets ke Firebase?")) return;
+            const btnMigrate = document.getElementById('btn-migrate'); btnMigrate.innerText = "Menyedot Data... ⏳"; btnMigrate.disabled = true;
             try {
-                // Link Google Sheets Lama Anda
                 const API_LAMA = 'https://script.google.com/macros/s/AKfycbwiWOMfOnoa1pjnVm9UefBhlGSH0mppuip16ui1H01W1Hixd4XwJRP-vZ36fl4-iFc9vw/exec';
-                const res = await fetch(`${API_LAMA}?t=${new Date().getTime()}`);
-                const dataLama = await res.json();
-
+                const res = await fetch(`${API_LAMA}?t=${new Date().getTime()}`); const dataLama = await res.json();
                 for(let i = 0; i < dataLama.length; i++) {
                     let p = dataLama[i];
                     await db.collection("products").doc(p.id.toString()).set({
-                        name: p.name,
-                        price: p.price,
-                        desc: p.desc,
-                        image: p.image, // URL Google Drive lama tetap aman
-                        status: p.status,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        name: p.name, price: p.price, desc: p.desc, image: p.image, status: p.status, createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                showToast("✅ Migrasi Berhasil! Sistem kini 100% Firebase.");
-                btnMigrate.style.display = "none"; 
-                loadStock();
+                showToast("✅ Migrasi Berhasil!"); btnMigrate.style.display = "none"; loadStock();
             } catch(e) {
-                showToast("Gagal migrasi: " + e.message, true);
-                btnMigrate.innerText = "Coba Lagi Migrasi"; btnMigrate.disabled = false;
+                showToast("Gagal migrasi: " + e.message, true); btnMigrate.innerText = "Coba Lagi Migrasi"; btnMigrate.disabled = false;
             }
         }
         
         document.getElementById('formProduk').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-submit'); btn.innerText = 'Uploading... 🚀'; btn.disabled = true;
+            e.preventDefault(); const btn = document.getElementById('btn-submit'); btn.innerText = 'Uploading... 🚀'; btn.disabled = true;
             try {
-                const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, '');
-                const fileInput = document.getElementById('imageFiles');
-                
+                const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, ''); const fileInput = document.getElementById('imageFiles');
                 let imgUrls = await Promise.all(Array.from(fileInput.files).map(f => uploadToImgBB(f)));
-                
-                await db.collection("products").add({
-                    name: document.getElementById('name').value,
-                    price: rawPrice,
-                    desc: document.getElementById('desc').value,
-                    image: imgUrls.join('|'),
-                    status: 'Ready',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                showToast('✅ Produk ditambahkan!');
-                document.getElementById('formProduk').reset();
-            } catch (error) { showToast(error.message, true); } 
-            finally { btn.innerText = 'Upload Cepat 🚀'; btn.disabled = false; }
+                await db.collection("products").add({ name: document.getElementById('name').value, price: rawPrice, desc: document.getElementById('desc').value, image: imgUrls.join('|'), status: 'Ready', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                showToast('✅ Produk ditambahkan!'); document.getElementById('formProduk').reset();
+            } catch (error) { showToast(error.message, true); } finally { btn.innerText = 'Upload Cepat 🚀'; btn.disabled = false; }
         });
 
         async function loadStock() {
-            const list = document.getElementById('stock-list');
-            list.innerHTML = '<div style="text-align:center;">Memuat data kilat... ⚡</div>';
+            const list = document.getElementById('stock-list'); const totalContainer = document.getElementById('total-stock-container');
+            list.innerHTML = '<div style="text-align:center;">Memuat data kilat... ⚡</div>'; totalContainer.innerHTML = '';
             
             try {
                 const snapshot = await db.collection("products").orderBy("createdAt", "desc").get();
-                list.innerHTML = '';
-                
-                if(snapshot.empty) {
-                    list.innerHTML = '<p style="text-align:center;">Belum ada produk di Firebase. Silakan klik tombol Kuning di atas untuk menarik data.</p>';
-                    return;
-                }
-                
+                if(snapshot.empty) { list.innerHTML = '<p style="text-align:center;">Belum ada produk di Firebase.</p>'; return; }
                 document.getElementById('btn-migrate').style.display = 'none';
+                
+                let readyCount = 0; let soldCount = 0; let presaleCount = 0; let productsHTML = '';
 
                 snapshot.forEach(doc => {
                     const p = doc.data(); const id = doc.id;
+                    if (p.status === 'Ready') readyCount++;
+                    else if (p.status === 'Kosong') soldCount++;
+                    else if (p.status === 'Presale') presaleCount++;
+
                     let fileIds = p.image ? p.image.split('|') : []; let firstId = fileIds[0] || '';
-                    
                     let thumbUrl = firstId.startsWith('http') ? firstId : (firstId ? `https://drive.google.com/thumbnail?id=${firstId}&sz=w200` : '');
                     
-                    list.innerHTML += `
+                    let encodedImages = encodeURIComponent(p.image || '');
+
+                    productsHTML += `
                         <div class="stock-item">
                             <div class="item-info">
                                 <div class="item-img-container"><img src="${thumbUrl}" class="item-img" loading="lazy"></div>
                                 <div>
                                     <div class="item-title">${p.name}</div>
                                     <div class="btn-group-action">
-                                        <button class="btn-edit" onclick="openEditModal('${id}', '${p.name.replace(/'/g, "\\'")}', '${p.price}', '${encodeURIComponent(p.desc)}')">✏️ Edit</button>
+                                        <button class="btn-edit" onclick="openEditModal('${id}', '${p.name.replace(/'/g, "\\'")}', '${p.price}', '${encodeURIComponent(p.desc)}', '${encodedImages}')">✏️ Edit</button>
                                         <button class="btn-delete" onclick="deleteProduk('${id}', '${p.name.replace(/'/g, "\\'")}')">🗑️ Hapus</button>
                                     </div>
                                 </div>
                             </div>
                             <div class="status-controls">
-                                <button class="btn-status ${p.status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${id}', 'Ready', this)">Ready</button>
+                                <button class="btn-status ${p.status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${id}', 'Ready', this)">Tersedia</button>
                                 <button class="btn-status ${p.status === 'Presale' ? 'active-Presale' : ''}" onclick="updateStock('${id}', 'Presale', this)">Presale</button>
-                                <button class="btn-status ${p.status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${id}', 'Kosong', this)">Habis</button>
+                                <button class="btn-status ${p.status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${id}', 'Kosong', this)">Terjual</button>
                             </div>
                         </div>
                     `;
                 });
+
+                totalContainer.innerHTML = `
+                    <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <div class="total-badge" style="margin-bottom: 0;">📦 Total: ${snapshot.size}</div>
+                        <div class="total-badge" style="background: #ffffff; color: #111; border: 1px solid #e5e5e5; margin-bottom: 0;">Tersedia: ${readyCount}</div>
+                        ${presaleCount > 0 ? `<div class="total-badge" style="background: #854d0e; margin-bottom: 0;">⏳ Pre-sale: ${presaleCount}</div>` : ''}
+                        <div class="total-badge" style="background: #166534; margin-bottom: 0;">✅ Terjual: ${soldCount}</div>
+                    </div>
+                `;
+                list.innerHTML = productsHTML;
+
             } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat data.</p>'; }
         }
 
@@ -277,49 +273,102 @@
             buttons.forEach(b => { b.classList.remove('active-Ready', 'active-Presale', 'active-Kosong'); b.disabled = true; });
             btnElement.classList.add('active-' + newStatus); btnElement.innerText = '...';
             try {
-                await db.collection("products").doc(id).update({ status: newStatus });
-                showToast(`✅ Status: ${newStatus}`);
+                await db.collection("products").doc(id).update({ status: newStatus }); 
+                showToast(`✅ Status Tersimpan`); loadStock();
             } catch (e) { showToast(`❌ Gagal!`, true); } 
-            finally { buttons.forEach(b => b.disabled = false); btnElement.innerText = newStatus === 'Kosong' ? 'Habis' : newStatus; }
+            finally { 
+                buttons.forEach(b => b.disabled = false); 
+                if (newStatus === 'Kosong') btnElement.innerText = 'Terjual ✅';
+                else if (newStatus === 'Ready') btnElement.innerText = 'Tersedia';
+                else btnElement.innerText = newStatus;
+            }
         }
 
         async function deleteProduk(id, name) {
-            if(!confirm(`YAKIN INGIN MENGHAPUS "${name}"?`)) return;
-            showToast("Sedang menghapus...");
-            try {
-                await db.collection("products").doc(id).delete();
-                showToast('✅ Dihapus!'); loadStock(); 
-            } catch (error) { showToast('Gagal hapus.', true); }
+            if(!confirm(`YAKIN INGIN MENGHAPUS "${name}"?`)) return; showToast("Sedang menghapus...");
+            try { await db.collection("products").doc(id).delete(); showToast('✅ Dihapus!'); loadStock(); } catch (error) { showToast('Gagal hapus.', true); }
         }
 
-        function openEditModal(id, name, price, descEncoded) {
+        // BUKA MODAL EDIT DAN RENDER HISTORI FOTO
+        function openEditModal(id, name, price, descEncoded, imagesEncoded) {
             currentEditId = id; 
-            document.getElementById('editName').value = name;
+            document.getElementById('editName').value = name; 
             document.getElementById('editPrice').value = 'Rp ' + new Intl.NumberFormat('id-ID').format(price);
             document.getElementById('editDesc').value = decodeURIComponent(descEncoded);
             document.getElementById('editImageFiles').value = ''; 
+
+            let rawImages = decodeURIComponent(imagesEncoded);
+            currentEditingImages = rawImages ? rawImages.split('|').map(u => u.trim()).filter(u => u !== '') : [];
+
+            renderImagePreviews();
             document.getElementById('modal-edit').style.display = 'flex';
         }
+
+        function renderImagePreviews() {
+            const previewContainer = document.getElementById('edit-image-preview');
+            previewContainer.innerHTML = '';
+
+            if (currentEditingImages.length === 0) {
+                previewContainer.innerHTML = '<span style="font-size: 12px; color: #999;">Tidak ada foto. Harap tambah foto baru.</span>';
+                return;
+            }
+
+            currentEditingImages.forEach((url, index) => {
+                let thumbUrl = url.startsWith('http') ? url : `https://drive.google.com/thumbnail?id=${url}&sz=w200`;
+                previewContainer.innerHTML += `
+                    <div class="preview-thumb">
+                        <img src="${thumbUrl}">
+                        <button type="button" class="btn-remove-img" onclick="removeEditingImage(${index})">×</button>
+                    </div>
+                `;
+            });
+        }
+
+        function removeEditingImage(index) {
+            currentEditingImages.splice(index, 1);
+            renderImagePreviews();
+        }
+
         function closeEditModal() { document.getElementById('modal-edit').style.display = 'none'; currentEditId = null; }
 
         async function submitEditProduk() {
-            const editName = document.getElementById('editName').value;
+            const editName = document.getElementById('editName').value; 
             const editPrice = document.getElementById('editPrice').value.replace(/[^0-9]/g, '');
-            const editDesc = document.getElementById('editDesc').value;
+            const editDesc = document.getElementById('editDesc').value; 
             const fileInput = document.getElementById('editImageFiles');
             const btn = document.getElementById('btn-submit-edit'); 
-            btn.innerText = 'Menyimpan... ⏳'; btn.disabled = true;
+            
+            if (!editName || !editPrice || !editDesc) { alert("Data teks wajib diisi!"); return; }
+            if (currentEditingImages.length === 0 && fileInput.files.length === 0) { alert("Produk harus memiliki minimal 1 foto!"); return; }
 
+            btn.innerText = 'Menyimpan... ⏳'; btn.disabled = true;
             try {
-                let updates = { name: editName, price: editPrice, desc: editDesc };
+                // Upload foto baru jika ada yang dipilih di input file (+)
+                let newUploadedUrls = [];
                 if (fileInput.files.length > 0) {
-                    let imgUrls = await Promise.all(Array.from(fileInput.files).map(f => uploadToImgBB(f)));
-                    updates.image = imgUrls.join('|');
+                    newUploadedUrls = await Promise.all(Array.from(fileInput.files).map(f => uploadToImgBB(f)));
                 }
+
+                // Gabungkan histori foto lama yang tersisa + foto baru
+                let finalImages = [...currentEditingImages, ...newUploadedUrls];
+
+                let updates = { 
+                    name: editName, 
+                    price: editPrice, 
+                    desc: editDesc,
+                    image: finalImages.join('|')
+                };
+
                 await db.collection("products").doc(currentEditId).update(updates);
-                showToast('✅ Tersimpan!'); closeEditModal(); loadStock(); 
-            } catch (error) { showToast("Gagal simpan", true); } 
-            finally { btn.innerText = 'Simpan Edit'; btn.disabled = false; }
+                showToast('✅ Produk Berhasil Diubah!'); 
+                closeEditModal(); 
+                loadStock(); 
+            } catch (error) { 
+                showToast("Gagal menyimpan perubahan", true); 
+            } finally { 
+                btn.innerText = 'Simpan Edit'; 
+                btn.disabled = false; 
+            }
         }
     </script>
 </body>
