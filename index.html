@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Owner Dashboard - Firebase Turbo</title>
+    <title>Owner Dashboard - Google Drive Version</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     
@@ -54,9 +54,6 @@
 
         .btn-migrate { background: #fef08a; color: #854d0e; border: 1px solid #eab308; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; margin-bottom: 20px; cursor: pointer;}
 
-        .skeleton-img, .skeleton-text { background: #e5e5e5; position: relative; overflow: hidden; border-radius: 4px; }
-        .shimmer::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: translateX(-100%); background-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0.4) 20%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0)); animation: shimmer 1.5s infinite; }
-        
         #toast { visibility: hidden; min-width: 250px; background: #111; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; bottom: 40px; transform: translateX(-50%); left: 50%; z-index: 1000;}
         #toast.show { visibility: visible; }
         
@@ -68,7 +65,6 @@
         
         .total-badge { background: #111; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin-bottom: 15px;}
 
-        /* CSS KHUSUS CONTAINER EDIT FOTO */
         .preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
         .preview-thumb { position: relative; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; background: #f0f0f0; }
         .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -95,14 +91,15 @@
                     <input type="text" id="price" required>
                 </div>
                 <div class="input-group">
-                    <label>Foto Produk (Pilih > 1)</label>
-                    <input type="file" id="imageFiles" accept="image/png, image/jpeg, image/webp" multiple required>
+                    <label>ID File / Link Google Drive Gambar</label>
+                    <input type="text" id="imageDriveId" placeholder="Contoh: 1B2C3D4E5F... (pisahkan dengan koma jika > 1)" required>
+                    <p style="font-size: 11px; color: #666; margin-top: 5px;">*Masukkan ID file Google Drive. Jika lebih dari satu, pisahkan dengan tanda koma (,)</p>
                 </div>
                 <div class="input-group">
                     <label>Deskripsi</label>
                     <textarea id="desc" rows="3" required></textarea>
                 </div>
-                <button type="submit" id="btn-submit" class="btn-submit">Upload Cepat 🚀</button>
+                <button type="submit" id="btn-submit" class="btn-submit">Simpan Produk 🚀</button>
             </form>
         </div>
 
@@ -113,7 +110,7 @@
         </div>
     </div>
 
-    <!-- MODAL EDIT INTERAKTIF -->
+    <!-- MODAL EDIT -->
     <div class="modal-edit" id="modal-edit">
         <div class="modal-edit-box">
             <h3 style="margin-bottom: 20px;">Edit Produk</h3>
@@ -127,8 +124,8 @@
             </div>
 
             <div class="input-group">
-                <label>Tambah Foto Baru (+)</label>
-                <input type="file" id="editImageFiles" accept="image/png, image/jpeg, image/webp" multiple>
+                <label>Tambah ID Google Drive Baru</label>
+                <input type="text" id="editNewImageId" placeholder="Masukkan ID file Drive tambahan...">
             </div>
 
             <div class="modal-buttons">
@@ -151,10 +148,9 @@
           measurementId: "G-VE15CDCC0Y"
         });
         const db = firebase.firestore();
-        const IMGBB_API_KEY = '9936bb39d0e369af97d393b546823709'; 
         
         let currentEditId = null;
-        let currentEditingImages = []; // Menyimpan list gambar aktif saat mode edit
+        let currentEditingImages = [];
 
         document.getElementById('price').addEventListener('input', formatRupiahInput);
         document.getElementById('editPrice').addEventListener('input', formatRupiahInput);
@@ -176,14 +172,6 @@
             toast.style.background = isError ? "#dc2626" : "#111"; toast.className = "show"; setTimeout(() => toast.className = "", 3000);
         }
 
-        async function uploadToImgBB(file) {
-            const formData = new FormData(); formData.append('image', file);
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.success) return data.data.url; 
-            throw new Error("Gagal upload ke ImgBB");
-        }
-
         async function migrasiDataLama() {
             if(!confirm("Yakin ingin memindahkan data dari Google Sheets ke Firebase?")) return;
             const btnMigrate = document.getElementById('btn-migrate'); btnMigrate.innerText = "Menyedot Data... ⏳"; btnMigrate.disabled = true;
@@ -202,14 +190,34 @@
             }
         }
         
+        // TAMBAH PRODUK BARU MENGGUNAKAN GOOGLE DRIVE ID
         document.getElementById('formProduk').addEventListener('submit', async (e) => {
-            e.preventDefault(); const btn = document.getElementById('btn-submit'); btn.innerText = 'Uploading... 🚀'; btn.disabled = true;
+            e.preventDefault(); 
+            const btn = document.getElementById('btn-submit'); btn.innerText = 'Menyimpan... 🚀'; btn.disabled = true;
             try {
-                const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, ''); const fileInput = document.getElementById('imageFiles');
-                let imgUrls = await Promise.all(Array.from(fileInput.files).map(f => uploadToImgBB(f)));
-                await db.collection("products").add({ name: document.getElementById('name').value, price: rawPrice, desc: document.getElementById('desc').value, image: imgUrls.join('|'), status: 'Ready', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                showToast('✅ Produk ditambahkan!'); document.getElementById('formProduk').reset();
-            } catch (error) { showToast(error.message, true); } finally { btn.innerText = 'Upload Cepat 🚀'; btn.disabled = false; }
+                const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, ''); 
+                let rawInputImg = document.getElementById('imageDriveId').value.trim();
+                
+                // Bersihkan spasi atau ubah format koma menjadi tanda pipa (|)
+                let formattedImg = rawInputImg.split(',').map(s => s.trim()).filter(s => s !== '').join('|');
+
+                await db.collection("products").add({ 
+                    name: document.getElementById('name').value, 
+                    price: rawPrice, 
+                    desc: document.getElementById('desc').value, 
+                    image: formattedImg, 
+                    status: 'Ready', 
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+                
+                showToast('✅ Produk Berhasil Ditambahkan!'); 
+                document.getElementById('formProduk').reset();
+            } catch (error) { 
+                showToast(error.message, true); 
+            } finally { 
+                btn.innerText = 'Simpan Produk 🚀'; 
+                btn.disabled = false; 
+            }
         });
 
         async function loadStock() {
@@ -249,7 +257,7 @@
                             <div class="status-controls">
                                 <button class="btn-status ${p.status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${id}', 'Ready', this)">Tersedia</button>
                                 <button class="btn-status ${p.status === 'Presale' ? 'active-Presale' : ''}" onclick="updateStock('${id}', 'Presale', this)">Presale</button>
-                                <button class="btn-status ${p.status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${id}', 'Kosong', this)">Terjual</button>
+                                <button class="btn-status ${p.status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${id}', 'Kosong', this)">Terjual ✅</button>
                             </div>
                         </div>
                     `;
@@ -289,13 +297,12 @@
             try { await db.collection("products").doc(id).delete(); showToast('✅ Dihapus!'); loadStock(); } catch (error) { showToast('Gagal hapus.', true); }
         }
 
-        // BUKA MODAL EDIT DAN RENDER HISTORI FOTO
         function openEditModal(id, name, price, descEncoded, imagesEncoded) {
             currentEditId = id; 
             document.getElementById('editName').value = name; 
             document.getElementById('editPrice').value = 'Rp ' + new Intl.NumberFormat('id-ID').format(price);
             document.getElementById('editDesc').value = decodeURIComponent(descEncoded);
-            document.getElementById('editImageFiles').value = ''; 
+            document.getElementById('editNewImageId').value = ''; 
 
             let rawImages = decodeURIComponent(imagesEncoded);
             currentEditingImages = rawImages ? rawImages.split('|').map(u => u.trim()).filter(u => u !== '') : [];
@@ -309,7 +316,7 @@
             previewContainer.innerHTML = '';
 
             if (currentEditingImages.length === 0) {
-                previewContainer.innerHTML = '<span style="font-size: 12px; color: #999;">Tidak ada foto. Harap tambah foto baru.</span>';
+                previewContainer.innerHTML = '<span style="font-size: 12px; color: #999;">Tidak ada foto.</span>';
                 return;
             }
 
@@ -335,28 +342,23 @@
             const editName = document.getElementById('editName').value; 
             const editPrice = document.getElementById('editPrice').value.replace(/[^0-9]/g, '');
             const editDesc = document.getElementById('editDesc').value; 
-            const fileInput = document.getElementById('editImageFiles');
+            const newDriveInput = document.getElementById('editNewImageId').value.trim();
             const btn = document.getElementById('btn-submit-edit'); 
             
             if (!editName || !editPrice || !editDesc) { alert("Data teks wajib diisi!"); return; }
-            if (currentEditingImages.length === 0 && fileInput.files.length === 0) { alert("Produk harus memiliki minimal 1 foto!"); return; }
 
             btn.innerText = 'Menyimpan... ⏳'; btn.disabled = true;
             try {
-                // Upload foto baru jika ada yang dipilih di input file (+)
-                let newUploadedUrls = [];
-                if (fileInput.files.length > 0) {
-                    newUploadedUrls = await Promise.all(Array.from(fileInput.files).map(f => uploadToImgBB(f)));
+                if (newDriveInput) {
+                    let newIds = newDriveInput.split(',').map(s => s.trim()).filter(s => s !== '');
+                    currentEditingImages.push(...newIds);
                 }
-
-                // Gabungkan histori foto lama yang tersisa + foto baru
-                let finalImages = [...currentEditingImages, ...newUploadedUrls];
 
                 let updates = { 
                     name: editName, 
                     price: editPrice, 
                     desc: editDesc,
-                    image: finalImages.join('|')
+                    image: currentEditingImages.join('|')
                 };
 
                 await db.collection("products").doc(currentEditId).update(updates);
