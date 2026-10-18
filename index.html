@@ -35,7 +35,7 @@
         .btn-submit { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .btn-submit:disabled { background: #666; cursor: not-allowed; }
         
-        /* SEARCH BAR KELOLA STOK */
+        /* SEARCH BAR */
         .search-box-owner { position: relative; margin-bottom: 15px; }
         .search-box-owner input { padding-left: 42px; border-radius: 12px; background: #f9f9f9;}
         .search-box-owner input:focus { background: #fff; }
@@ -59,12 +59,15 @@
         .btn-status.active-Presale { background: #fef08a; color: #854d0e; border-color: #854d0e; }
         .btn-status.active-Kosong { background: #dcfce7; color: #166534; border-color: #166534; } 
 
-        /* CSS UNTUK FILTER LENCANA INTERAKTIF */
         .total-badge { padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block; cursor: pointer; transition: all 0.2s ease; opacity: 0.45; border-width: 1px; border-style: solid;}
         .total-badge:hover { opacity: 0.7; transform: translateY(-1px); }
         .total-badge.active-filter { opacity: 1; font-weight: 700; transform: scale(1.05); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
         
-        /* CSS UNTUK MODAL EDIT & PREVIEW GAMBAR */
+        /* BULK EDIT CSS */
+        .cb-bulk { transform: scale(1.4); cursor: pointer; margin-right: 5px;}
+        #bulk-toolbar { display: none; background: #fff; padding: 12px 15px; border: 1px solid #111; border-radius: 12px; margin-bottom: 15px; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.08); position: sticky; top: 10px; z-index: 10;}
+        .btn-bulk { padding: 8px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; }
+
         .modal-edit { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px;}
         .modal-edit-box { background: #fff; padding: 25px; border-radius: 16px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto;}
         .modal-buttons { display: flex; gap: 10px; margin-top: 20px;}
@@ -100,7 +103,7 @@
                     <input type="text" id="price" required>
                 </div>
                 <div class="input-group">
-                    <label>Pilih Gambar (Otomatis masuk ke Google Drive)</label>
+                    <label>Pilih Gambar (Dapat pilih >1)</label>
                     <input type="file" id="imageFiles" accept="image/png, image/jpeg, image/webp" multiple required>
                 </div>
                 <div class="input-group">
@@ -112,16 +115,25 @@
         </div>
 
         <div id="tab-stock" class="tab-content">
-            <!-- PENCARIAN STOK -->
             <div class="search-box-owner">
                 <span class="search-icon">🔍</span>
                 <input type="text" id="searchStockInput" placeholder="Cari nama barang..." oninput="renderStock()">
             </div>
             
-            <!-- WADAH LENCANA FILTER -->
             <div id="total-stock-container"></div>
             
-            <!-- DAFTAR BARANG -->
+            <!-- TOOLBAR BULK EDIT MUNCUL JIKA ADA YG DICENTANG -->
+            <div id="bulk-toolbar">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span id="bulk-count" style="font-size: 13.5px; font-weight: 700; color: #111;">0 Terpilih</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-bulk" style="background:#111; color:#fff;" onclick="executeBulkAction('Kosong')">Set Terjual</button>
+                    <button class="btn-bulk" style="background:#f0f0f0; color:#333;" onclick="executeBulkAction('Ready')">Set Tersedia</button>
+                    <button class="btn-bulk" style="background:#fee2e2; color:#991b1b;" onclick="executeBulkAction('Hapus')">Hapus</button>
+                </div>
+            </div>
+
             <div id="stock-list"></div>
         </div>
     </div>
@@ -169,9 +181,9 @@
         let currentEditId = null;
         let currentEditingImages = []; 
         
-        // VARIABEL LOKAL UNTUK PENCARIAN & FILTER REAL-TIME
         let localProducts = [];
         let currentFilter = 'All';
+        let selectedItems = new Set(); // Menyimpan ID produk yang dicentang
 
         document.getElementById('price').addEventListener('input', formatRupiahInput);
         document.getElementById('editPrice').addEventListener('input', formatRupiahInput);
@@ -215,7 +227,7 @@
         document.getElementById('formProduk').addEventListener('submit', async (e) => {
             e.preventDefault(); 
             const btn = document.getElementById('btn-submit'); 
-            btn.innerText = 'Mengirim File ke Google Drive... ⏳'; btn.disabled = true;
+            btn.innerText = 'Update..⏳'; btn.disabled = true;
 
             try {
                 const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, ''); 
@@ -236,15 +248,14 @@
             } catch (error) { 
                 showToast("Gagal: " + error, true); 
             } finally { 
-                btn.innerText = 'Upload ke Drive & Simpan 🚀'; btn.disabled = false; 
+                btn.innerText = 'Upload & Simpan'; btn.disabled = false; 
             }
         });
 
         // ==========================================
-        // SISTEM LOAD, RENDER & FILTER (ANTI-LOMPAT)
+        // SISTEM LOAD & BULK EDIT
         // ==========================================
 
-        // Mengambil data dari Firebase HANYA sekali saat tab ditekan
         async function loadStock() {
             const list = document.getElementById('stock-list'); 
             const totalContainer = document.getElementById('total-stock-container');
@@ -254,29 +265,90 @@
             
             try {
                 const snapshot = await db.collection("products").orderBy("createdAt", "desc").get();
-                localProducts = []; // Kosongkan data lokal
+                localProducts = []; 
+                selectedItems.clear(); // Bersihkan centang saat reload dari awal
+                updateBulkUI();
                 
                 if(snapshot.empty) { 
                     list.innerHTML = '<p style="text-align:center;">Belum ada produk.</p>'; 
                     return; 
                 }
                 
-                // Simpan ke variabel lokal agar cepat saat filter/pencarian
                 snapshot.forEach(doc => {
                     localProducts.push({ id: doc.id, ...doc.data() });
                 });
 
-                renderStock(); // Jalankan fungsi render
+                renderStock(); 
             } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat data.</p>'; }
         }
 
-        // Fungsi khusus saat Lencana diklik
         function setFilter(status) {
             currentFilter = status;
             renderStock();
         }
 
-        // Fungsi khusus menampilkan data & lencana secara instan
+        // FUNGSI CENTANG BARANG
+        function toggleSelect(id, checkboxElem) {
+            if(checkboxElem.checked) selectedItems.add(id);
+            else selectedItems.delete(id);
+            updateBulkUI();
+        }
+
+        function updateBulkUI() {
+            const toolbar = document.getElementById('bulk-toolbar');
+            const countText = document.getElementById('bulk-count');
+            if(selectedItems.size > 0) {
+                toolbar.style.display = 'flex';
+                countText.innerText = `${selectedItems.size} Terpilih`;
+            } else {
+                toolbar.style.display = 'none';
+            }
+        }
+
+        // FUNGSI AKSI MASSAL (BULK UPDATE/DELETE)
+        async function executeBulkAction(actionType) {
+            if(selectedItems.size === 0) return;
+            
+            let msg = actionType === 'Hapus' ? `YAKIN MENGHAPUS ${selectedItems.size} BARANG?` : `Ubah status ${selectedItems.size} barang?`;
+            if(!confirm(msg)) return;
+
+            showToast(`Memproses ${selectedItems.size} barang... ⏳`);
+            const batch = db.batch();
+
+            selectedItems.forEach(id => {
+                const ref = db.collection("products").doc(id);
+                if (actionType === 'Hapus') {
+                    batch.delete(ref);
+                } else {
+                    batch.update(ref, { status: actionType });
+                }
+            });
+
+            try {
+                await batch.commit();
+                showToast('✅ Aksi Massal Berhasil!');
+                
+                // Update data lokal agar instan tanpa loading
+                if (actionType === 'Hapus') {
+                    localProducts = localProducts.filter(p => !selectedItems.has(p.id));
+                } else {
+                    localProducts.forEach(p => {
+                        if(selectedItems.has(p.id)) p.status = actionType;
+                    });
+                }
+                
+                selectedItems.clear();
+                updateBulkUI();
+                
+                let scrollPosition = window.scrollY;
+                renderStock(); 
+                window.scrollTo(0, scrollPosition);
+
+            } catch(e) {
+                showToast('❌ Gagal memproses aksi massal', true);
+            }
+        }
+
         function renderStock() {
             const list = document.getElementById('stock-list'); 
             const totalContainer = document.getElementById('total-stock-container');
@@ -284,14 +356,12 @@
             
             let readyCount = 0; let soldCount = 0; let presaleCount = 0;
             
-            // Hitung total murni dari seluruh data
             localProducts.forEach(p => {
                 if (p.status === 'Ready') readyCount++;
                 else if (p.status === 'Kosong') soldCount++;
                 else if (p.status === 'Presale') presaleCount++;
             });
 
-            // TAMPILKAN LENCANA FILTER (INTERAKTIF)
             totalContainer.innerHTML = `
                 <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
                     <div class="total-badge ${currentFilter === 'All' ? 'active-filter' : ''}" onclick="setFilter('All')" style="background: #111; color: #fff; border-color: #111;">📦 Total: ${localProducts.length}</div>
@@ -301,7 +371,6 @@
                 </div>
             `;
             
-            // Filter data berdasarkan Pencarian (Search Bar) DAN Lencana
             let filteredProducts = localProducts.filter(p => {
                 let matchSearch = p.name.toLowerCase().includes(searchQuery);
                 let matchStatus = currentFilter === 'All' ? true : p.status === currentFilter;
@@ -318,9 +387,11 @@
                 let fileIds = p.image ? p.image.split('|') : []; let firstId = fileIds[0] || '';
                 let thumbUrl = `https://drive.google.com/thumbnail?id=${firstId}&sz=w200`;
                 let encodedImages = encodeURIComponent(p.image || '');
+                let isChecked = selectedItems.has(p.id) ? 'checked' : '';
 
                 productsHTML += `
                     <div class="stock-item">
+                        <input type="checkbox" class="cb-bulk" value="${p.id}" onchange="toggleSelect('${p.id}', this)" ${isChecked}>
                         <div class="item-info">
                             <div class="item-img-container">
                                 <img src="${thumbUrl}" class="item-img" onerror="this.src='https://placehold.co/200x200/eeeeee/999999?text=Gagal';">
@@ -351,20 +422,13 @@
             btnElement.classList.add('active-' + newStatus); btnElement.innerText = '...';
             
             try {
-                // Update ke Firebase Server
                 await db.collection("products").doc(id).update({ status: newStatus }); 
-                
-                // Update ke Data Lokal agar instan
                 let productIndex = localProducts.findIndex(p => p.id === id);
                 if (productIndex !== -1) { localProducts[productIndex].status = newStatus; }
-
                 showToast(`✅ Status Tersimpan`); 
-                
-                // RENDER ULANG TAPI PERTAHANKAN POSISI SCROLL (ANTI-LOMPAT)
                 let scrollPosition = window.scrollY;
                 renderStock(); 
                 window.scrollTo(0, scrollPosition);
-
             } catch (e) { 
                 showToast(`❌ Gagal!`, true); 
                 buttons.forEach(b => b.disabled = false); 
@@ -376,9 +440,9 @@
             try { 
                 await db.collection("products").doc(id).delete(); 
                 showToast('✅ Dihapus!'); 
-                
-                // Hapus dari data lokal dan update tanpa melompat
                 localProducts = localProducts.filter(p => p.id !== id);
+                selectedItems.delete(id);
+                updateBulkUI();
                 let scrollPosition = window.scrollY;
                 renderStock(); 
                 window.scrollTo(0, scrollPosition);
@@ -454,22 +518,16 @@
                 }
 
                 let finalImages = [...currentEditingImages, ...newUploadedUrls];
-
-                let updates = { 
-                    name: editName, 
-                    price: editPrice, 
-                    desc: editDesc,
-                    image: finalImages.join('|')
-                };
+                let updates = { name: editName, price: editPrice, desc: editDesc, image: finalImages.join('|') };
 
                 await db.collection("products").doc(currentEditId).update(updates);
                 showToast('✅ Produk Berhasil Diubah!'); 
                 closeEditModal(); 
-                loadStock(); // Load ulang keseluruhan data setelah edit beres
+                loadStock(); 
             } catch (error) { 
                 showToast("Gagal menyimpan perubahan", true); 
             } finally { 
-                btn.innerText = 'Simpan Edit '; 
+                btn.innerText = 'Simpan Edit'; 
                 btn.disabled = false; 
             }
         }
