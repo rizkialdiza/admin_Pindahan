@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard - Cara Lama (Lengkap)</title>
+    <title>Owner Dashboard - Pro Management</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -17,7 +17,7 @@
         body { background-color: var(--bg-body); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
         
         .container { background: var(--bg-card); padding: 35px; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04); margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); }
-        h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+        h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
 
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #f0f0f0; padding: 5px; border-radius: 10px; }
         .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; color: var(--text-muted); }
@@ -32,15 +32,21 @@
         input[type="text"], input[type="file"], textarea { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
         input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(17,17,17,0.05); }
         
-        .btn-submit { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; }
+        .btn-submit { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .btn-submit:disabled { background: #666; cursor: not-allowed; }
         
-        .stock-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; gap: 10px;}
+        /* SEARCH BAR KELOLA STOK */
+        .search-box-owner { position: relative; margin-bottom: 15px; }
+        .search-box-owner input { padding-left: 42px; border-radius: 12px; background: #f9f9f9;}
+        .search-box-owner input:focus { background: #fff; }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #888; pointer-events: none;}
+
+        .stock-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; gap: 10px; background: #fff;}
         .item-info { display: flex; align-items: center; gap: 12px; flex: 1; }
         .item-img-container { position: relative; width: 55px; height: 55px; border-radius: 8px; background: #eee; overflow: hidden; flex-shrink: 0;}
         .item-img { width: 100%; height: 100%; object-fit: cover; }
         
-        .item-title { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+        .item-title { font-size: 14px; font-weight: 600; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
         
         .btn-group-action { display: flex; gap: 6px; }
         .btn-edit, .btn-delete { border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s;}
@@ -53,7 +59,10 @@
         .btn-status.active-Presale { background: #fef08a; color: #854d0e; border-color: #854d0e; }
         .btn-status.active-Kosong { background: #dcfce7; color: #166534; border-color: #166534; } 
 
-        .total-badge { background: #111; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin-bottom: 15px;}
+        /* CSS UNTUK FILTER LENCANA INTERAKTIF */
+        .total-badge { padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block; cursor: pointer; transition: all 0.2s ease; opacity: 0.45; border-width: 1px; border-style: solid;}
+        .total-badge:hover { opacity: 0.7; transform: translateY(-1px); }
+        .total-badge.active-filter { opacity: 1; font-weight: 700; transform: scale(1.05); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
         
         /* CSS UNTUK MODAL EDIT & PREVIEW GAMBAR */
         .modal-edit { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px;}
@@ -65,9 +74,9 @@
         .preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
         .preview-thumb { position: relative; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; background: #f0f0f0; }
         .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .btn-remove-img { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .btn-remove-img { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.8); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        #toast { visibility: hidden; min-width: 250px; background: #111; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; bottom: 40px; transform: translateX(-50%); left: 50%; z-index: 1000;}
+        #toast { visibility: hidden; min-width: 250px; background: #111; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; bottom: 40px; transform: translateX(-50%); left: 50%; z-index: 3000; font-weight: 500;}
         #toast.show { visibility: visible; }
     </style>
 </head>
@@ -91,19 +100,28 @@
                     <input type="text" id="price" required>
                 </div>
                 <div class="input-group">
-                    <label>Pilih Gambar (File otomatis masuk ke Google Drive)</label>
+                    <label>Pilih Gambar (Otomatis masuk ke Google Drive)</label>
                     <input type="file" id="imageFiles" accept="image/png, image/jpeg, image/webp" multiple required>
                 </div>
                 <div class="input-group">
                     <label>Deskripsi</label>
                     <textarea id="desc" rows="3" required></textarea>
                 </div>
-                <button type="submit" id="btn-submit" class="btn-submit">Upload ke Google Drive & Simpan 🚀</button>
+                <button type="submit" id="btn-submit" class="btn-submit">Upload dan Simpan</button>
             </form>
         </div>
 
         <div id="tab-stock" class="tab-content">
+            <!-- PENCARIAN STOK -->
+            <div class="search-box-owner">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchStockInput" placeholder="Cari nama barang..." oninput="renderStock()">
+            </div>
+            
+            <!-- WADAH LENCANA FILTER -->
             <div id="total-stock-container"></div>
+            
+            <!-- DAFTAR BARANG -->
             <div id="stock-list"></div>
         </div>
     </div>
@@ -146,11 +164,14 @@
         });
         const db = firebase.firestore();
 
-        // LINK GOOGLE APPS SCRIPT
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwiWOMfOnoa1pjnVm9UefBhlGSH0mppuip16ui1H01W1Hixd4XwJRP-vZ36fl4-iFc9vw/exec';
         
         let currentEditId = null;
         let currentEditingImages = []; 
+        
+        // VARIABEL LOKAL UNTUK PENCARIAN & FILTER REAL-TIME
+        let localProducts = [];
+        let currentFilter = 'All';
 
         document.getElementById('price').addEventListener('input', formatRupiahInput);
         document.getElementById('editPrice').addEventListener('input', formatRupiahInput);
@@ -172,7 +193,6 @@
             toast.style.background = isError ? "#dc2626" : "#111"; toast.className = "show"; setTimeout(() => toast.className = "", 3000);
         }
 
-        // FUNGSI MENGIRIM FILE KE GOOGLE DRIVE
         async function uploadFileToDrive(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -186,9 +206,7 @@
                         const result = await response.json();
                         if (result.status === 'success') resolve(result.id); 
                         else reject(result.message);
-                    } catch (e) {
-                        reject("Koneksi gagal ke Google Script");
-                    }
+                    } catch (e) { reject("Koneksi gagal ke Google Script"); }
                 };
                 reader.readAsDataURL(file);
             });
@@ -202,7 +220,6 @@
             try {
                 const rawPrice = document.getElementById('price').value.replace(/[^0-9]/g, ''); 
                 const fileInput = document.getElementById('imageFiles');
-                
                 let driveIds = await Promise.all(Array.from(fileInput.files).map(f => uploadFileToDrive(f)));
 
                 await db.collection("products").add({ 
@@ -219,85 +236,153 @@
             } catch (error) { 
                 showToast("Gagal: " + error, true); 
             } finally { 
-                btn.innerText = 'Upload ke Google Drive & Simpan 🚀'; btn.disabled = false; 
+                btn.innerText = 'Upload ke Drive & Simpan 🚀'; btn.disabled = false; 
             }
         });
 
-        // TAMPILAN STOK
+        // ==========================================
+        // SISTEM LOAD, RENDER & FILTER (ANTI-LOMPAT)
+        // ==========================================
+
+        // Mengambil data dari Firebase HANYA sekali saat tab ditekan
         async function loadStock() {
             const list = document.getElementById('stock-list'); 
             const totalContainer = document.getElementById('total-stock-container');
             
-            list.innerHTML = '<div style="text-align:center;">Memuat data... ⚡</div>';
+            list.innerHTML = '<div style="text-align:center; padding: 20px;">Memuat data dari server... ⚡</div>';
             totalContainer.innerHTML = '';
             
             try {
                 const snapshot = await db.collection("products").orderBy("createdAt", "desc").get();
-                if(snapshot.empty) { list.innerHTML = '<p style="text-align:center;">Belum ada produk.</p>'; return; }
+                localProducts = []; // Kosongkan data lokal
                 
-                let readyCount = 0; let soldCount = 0; let presaleCount = 0; let productsHTML = '';
-
+                if(snapshot.empty) { 
+                    list.innerHTML = '<p style="text-align:center;">Belum ada produk.</p>'; 
+                    return; 
+                }
+                
+                // Simpan ke variabel lokal agar cepat saat filter/pencarian
                 snapshot.forEach(doc => {
-                    const p = doc.data(); const id = doc.id;
-                    
-                    if (p.status === 'Ready') readyCount++;
-                    else if (p.status === 'Kosong') soldCount++;
-                    else if (p.status === 'Presale') presaleCount++;
-
-                    let fileIds = p.image ? p.image.split('|') : []; let firstId = fileIds[0] || '';
-                    let thumbUrl = `https://drive.google.com/thumbnail?id=${firstId}&sz=w200`;
-                    let encodedImages = encodeURIComponent(p.image || '');
-
-                    productsHTML += `
-                        <div class="stock-item">
-                            <div class="item-info">
-                                <div class="item-img-container">
-                                    <img src="${thumbUrl}" class="item-img" onerror="this.src='https://placehold.co/200x200/eeeeee/999999?text=Gagal';">
-                                </div>
-                                <div>
-                                    <div class="item-title">${p.name}</div>
-                                    <div class="btn-group-action">
-                                        <button class="btn-edit" onclick="openEditModal('${id}', '${p.name.replace(/'/g, "\\'")}', '${p.price}', '${encodeURIComponent(p.desc)}', '${encodedImages}')">✏️ Edit</button>
-                                        <button class="btn-delete" onclick="deleteProduk('${id}', '${p.name.replace(/'/g, "\\'")}')">🗑️ Hapus</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="status-controls">
-                                <button class="btn-status ${p.status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${id}', 'Ready', this)">Tersedia</button>
-                                <button class="btn-status ${p.status === 'Presale' ? 'active-Presale' : ''}" onclick="updateStock('${id}', 'Presale', this)">Presale</button>
-                                <button class="btn-status ${p.status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${id}', 'Kosong', this)">Terjual ✅</button>
-                            </div>
-                        </div>
-                    `;
+                    localProducts.push({ id: doc.id, ...doc.data() });
                 });
 
-                totalContainer.innerHTML = `
-                    <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
-                        <div class="total-badge" style="margin-bottom: 0;">📦 Total: ${snapshot.size}</div>
-                        <div class="total-badge" style="background: #ffffff; color: #111; border: 1px solid #e5e5e5; margin-bottom: 0;">Tersedia: ${readyCount}</div>
-                        <div class="total-badge" style="background: #854d0e; margin-bottom: 0;">⏳ Pre-sale: ${presaleCount}</div>
-                        <div class="total-badge" style="background: #166534; margin-bottom: 0;">✅ Terjual: ${soldCount}</div>
+                renderStock(); // Jalankan fungsi render
+            } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat data.</p>'; }
+        }
+
+        // Fungsi khusus saat Lencana diklik
+        function setFilter(status) {
+            currentFilter = status;
+            renderStock();
+        }
+
+        // Fungsi khusus menampilkan data & lencana secara instan
+        function renderStock() {
+            const list = document.getElementById('stock-list'); 
+            const totalContainer = document.getElementById('total-stock-container');
+            const searchQuery = document.getElementById('searchStockInput').value.toLowerCase().trim();
+            
+            let readyCount = 0; let soldCount = 0; let presaleCount = 0;
+            
+            // Hitung total murni dari seluruh data
+            localProducts.forEach(p => {
+                if (p.status === 'Ready') readyCount++;
+                else if (p.status === 'Kosong') soldCount++;
+                else if (p.status === 'Presale') presaleCount++;
+            });
+
+            // TAMPILKAN LENCANA FILTER (INTERAKTIF)
+            totalContainer.innerHTML = `
+                <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div class="total-badge ${currentFilter === 'All' ? 'active-filter' : ''}" onclick="setFilter('All')" style="background: #111; color: #fff; border-color: #111;">📦 Total: ${localProducts.length}</div>
+                    <div class="total-badge ${currentFilter === 'Ready' ? 'active-filter' : ''}" onclick="setFilter('Ready')" style="background: #ffffff; color: #111; border-color: #e5e5e5;">Tersedia: ${readyCount}</div>
+                    <div class="total-badge ${currentFilter === 'Presale' ? 'active-filter' : ''}" onclick="setFilter('Presale')" style="background: #854d0e; color: #fff; border-color: #854d0e;">⏳ Pre-sale: ${presaleCount}</div>
+                    <div class="total-badge ${currentFilter === 'Kosong' ? 'active-filter' : ''}" onclick="setFilter('Kosong')" style="background: #166534; color: #fff; border-color: #166534;">✅ Terjual: ${soldCount}</div>
+                </div>
+            `;
+            
+            // Filter data berdasarkan Pencarian (Search Bar) DAN Lencana
+            let filteredProducts = localProducts.filter(p => {
+                let matchSearch = p.name.toLowerCase().includes(searchQuery);
+                let matchStatus = currentFilter === 'All' ? true : p.status === currentFilter;
+                return matchSearch && matchStatus;
+            });
+
+            if (filteredProducts.length === 0) {
+                list.innerHTML = '<p style="text-align:center; margin-top:20px; color:#888;">Produk tidak ditemukan.</p>';
+                return;
+            }
+
+            let productsHTML = '';
+            filteredProducts.forEach(p => {
+                let fileIds = p.image ? p.image.split('|') : []; let firstId = fileIds[0] || '';
+                let thumbUrl = `https://drive.google.com/thumbnail?id=${firstId}&sz=w200`;
+                let encodedImages = encodeURIComponent(p.image || '');
+
+                productsHTML += `
+                    <div class="stock-item">
+                        <div class="item-info">
+                            <div class="item-img-container">
+                                <img src="${thumbUrl}" class="item-img" onerror="this.src='https://placehold.co/200x200/eeeeee/999999?text=Gagal';">
+                            </div>
+                            <div>
+                                <div class="item-title">${p.name}</div>
+                                <div class="btn-group-action">
+                                    <button class="btn-edit" onclick="openEditModal('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${p.price}', '${encodeURIComponent(p.desc)}', '${encodedImages}')">✏️ Edit</button>
+                                    <button class="btn-delete" onclick="deleteProduk('${p.id}', '${p.name.replace(/'/g, "\\'")}')">🗑️ Hapus</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="status-controls">
+                            <button class="btn-status ${p.status === 'Ready' ? 'active-Ready' : ''}" onclick="updateStock('${p.id}', 'Ready', this)">Tersedia</button>
+                            <button class="btn-status ${p.status === 'Presale' ? 'active-Presale' : ''}" onclick="updateStock('${p.id}', 'Presale', this)">Presale</button>
+                            <button class="btn-status ${p.status === 'Kosong' ? 'active-Kosong' : ''}" onclick="updateStock('${p.id}', 'Kosong', this)">Terjual ✅</button>
+                        </div>
                     </div>
                 `;
-                
-                list.innerHTML = productsHTML;
-            } catch (e) { list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat data.</p>'; }
+            });
+            
+            list.innerHTML = productsHTML;
         }
 
         async function updateStock(id, newStatus, btnElement) {
             const container = btnElement.parentElement; const buttons = container.querySelectorAll('.btn-status');
             buttons.forEach(b => { b.classList.remove('active-Ready', 'active-Presale', 'active-Kosong'); b.disabled = true; });
             btnElement.classList.add('active-' + newStatus); btnElement.innerText = '...';
+            
             try {
+                // Update ke Firebase Server
                 await db.collection("products").doc(id).update({ status: newStatus }); 
-                showToast(`✅ Status Tersimpan`); loadStock();
-            } catch (e) { showToast(`❌ Gagal!`, true); } 
-            finally { buttons.forEach(b => b.disabled = false); }
+                
+                // Update ke Data Lokal agar instan
+                let productIndex = localProducts.findIndex(p => p.id === id);
+                if (productIndex !== -1) { localProducts[productIndex].status = newStatus; }
+
+                showToast(`✅ Status Tersimpan`); 
+                
+                // RENDER ULANG TAPI PERTAHANKAN POSISI SCROLL (ANTI-LOMPAT)
+                let scrollPosition = window.scrollY;
+                renderStock(); 
+                window.scrollTo(0, scrollPosition);
+
+            } catch (e) { 
+                showToast(`❌ Gagal!`, true); 
+                buttons.forEach(b => b.disabled = false); 
+            } 
         }
 
         async function deleteProduk(id, name) {
             if(!confirm(`YAKIN MENGHAPUS "${name}"?`)) return; 
-            try { await db.collection("products").doc(id).delete(); showToast('✅ Dihapus!'); loadStock(); } 
+            try { 
+                await db.collection("products").doc(id).delete(); 
+                showToast('✅ Dihapus!'); 
+                
+                // Hapus dari data lokal dan update tanpa melompat
+                localProducts = localProducts.filter(p => p.id !== id);
+                let scrollPosition = window.scrollY;
+                renderStock(); 
+                window.scrollTo(0, scrollPosition);
+            } 
             catch (error) { showToast('Gagal hapus.', true); }
         }
 
@@ -363,13 +448,11 @@
             btn.innerText = 'Menyimpan... ⏳'; btn.disabled = true;
             try {
                 let newUploadedUrls = [];
-                // Jika ada file foto baru yang diunggah
                 if (fileInput.files.length > 0) {
                     btn.innerText = 'Mengupload Foto Baru... ⏳';
                     newUploadedUrls = await Promise.all(Array.from(fileInput.files).map(f => uploadFileToDrive(f)));
                 }
 
-                // Gabungkan sisa foto lama dengan foto yang baru diupload
                 let finalImages = [...currentEditingImages, ...newUploadedUrls];
 
                 let updates = { 
@@ -382,11 +465,11 @@
                 await db.collection("products").doc(currentEditId).update(updates);
                 showToast('✅ Produk Berhasil Diubah!'); 
                 closeEditModal(); 
-                loadStock(); 
+                loadStock(); // Load ulang keseluruhan data setelah edit beres
             } catch (error) { 
                 showToast("Gagal menyimpan perubahan", true); 
             } finally { 
-                btn.innerText = 'Simpan Edit 🚀'; 
+                btn.innerText = 'Simpan Edit '; 
                 btn.disabled = false; 
             }
         }
